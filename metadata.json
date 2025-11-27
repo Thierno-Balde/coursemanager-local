@@ -1,0 +1,5 @@
+{
+  "name": "CourseManager Local",
+  "description": "A local web application to organize and display educational course materials, PDFs, videos, and supports.",
+  "requestFramePermissions": []
+}
