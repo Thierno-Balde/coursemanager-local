@@ -14,39 +14,75 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 const STORAGE_KEY = 'course_manager_data';
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize state from localStorage or fallback to default data
-  const [courses, setCourses] = useState<Course[]>(() => {
-    try {
-      const storedData = localStorage.getItem(STORAGE_KEY);
-      if (storedData) {
-        const parsedData: AppData = JSON.parse(storedData);
-        // Basic validation to ensure we have an array
-        if (Array.isArray(parsedData.courses)) {
-          return parsedData.courses;
+  const loadFallbackData = (): Course[] => {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        const storedData = localStorage.getItem(STORAGE_KEY);
+        if (storedData) {
+          const parsedData: AppData = JSON.parse(storedData);
+          if (Array.isArray(parsedData.courses)) {
+            return parsedData.courses;
+          }
         }
+      } catch (error) {
+        console.error('Failed to load data from localStorage:', error);
       }
-    } catch (error) {
-      console.error("Failed to load data from localStorage:", error);
     }
     return COURSE_DATA.courses;
-  });
+  };
 
-  // Persist to localStorage whenever courses change
+  // Start with seed data; hydrate from Electron or localStorage after mount
+  const [courses, setCourses] = useState<Course[]>(() => loadFallbackData());
+
   useEffect(() => {
-    try {
-      const dataToSave: AppData = { courses };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    } catch (error) {
-      console.error("Failed to save data to localStorage:", error);
-    }
-  }, [courses]);
+    let cancelled = false;
+    const hydrate = async () => {
+      if (typeof window !== 'undefined' && window.electronAPI?.getData) {
+        try {
+          const data = await window.electronAPI.getData();
+          if (!cancelled) {
+            setCourses(Array.isArray(data?.courses) ? data.courses : COURSE_DATA.courses);
+          }
+          return;
+        } catch (error) {
+          console.error('Failed to load data from Electron store, falling back:', error);
+        }
+      }
+      if (!cancelled) {
+        setCourses(loadFallbackData());
+      }
+    };
+    hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const persistCourses = (updater: (prev: Course[]) => Course[]) => {
+    setCourses(prev => {
+      const next = updater(prev);
+      if (typeof window !== 'undefined' && window.electronAPI?.saveData) {
+        window.electronAPI.saveData({ courses: next }).catch(error => {
+          console.error('Failed to save data to Electron store:', error);
+        });
+      } else if (typeof localStorage !== 'undefined') {
+        try {
+          const dataToSave: AppData = { courses: next };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+        } catch (error) {
+          console.error('Failed to save data to localStorage:', error);
+        }
+      }
+      return next;
+    });
+  };
 
   const addCourse = (course: Course) => {
-    setCourses(prev => [...prev, course]);
+    persistCourses(prev => [...prev, course]);
   };
 
   const addModule = (courseId: string, module: CourseItem) => {
-    setCourses(prev => prev.map(course => {
+    persistCourses(prev => prev.map(course => {
       if (course.id === courseId) {
         return { ...course, items: [...course.items, module] };
       }
@@ -55,7 +91,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addResource = (courseId: string, moduleId: string, category: 'pdfs' | 'videos' | 'extras', resource: Resource) => {
-    setCourses(prev => prev.map(course => {
+    persistCourses(prev => prev.map(course => {
       if (course.id === courseId) {
         const updatedItems = course.items.map(item => {
           if (item.id === moduleId) {

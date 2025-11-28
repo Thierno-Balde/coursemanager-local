@@ -1,0 +1,127 @@
+{
+  "courses": [
+    {
+      "id": "electricite",
+      "name": "Électricité",
+      "description": "Fondamentaux de l'électricité, lois de base et sécurité.",
+      "icon": "Zap",
+      "items": [
+        {
+          "id": "ue1-intro",
+          "title": "UE1 – Introduction à l’électricité",
+          "description": "Notions de base : tension, intensité, résistance.",
+          "main": {
+            "label": "Support de cours UE1",
+            "type": "ppt",
+            "url": "#"
+          },
+          "pdfs": [
+            {
+              "label": "Cours complet",
+              "type": "pdf",
+              "url": "#"
+            },
+            {
+              "label": "Fiche mémo Formules",
+              "type": "pdf",
+              "url": "#"
+            }
+          ],
+          "videos": [
+            {
+              "label": "Comprendre la loi d'Ohm",
+              "type": "video",
+              "url": "https://www.youtube.com/watch?v=example"
+            }
+          ],
+          "extras": [
+            {
+              "label": "Schéma interactif",
+              "type": "link",
+              "url": "#"
+            },
+            {
+              "label": "Banque d'images",
+              "type": "zip",
+              "url": "#"
+            }
+          ]
+        },
+        {
+          "id": "ue2-courant-alternatif",
+          "title": "UE2 – Courant Alternatif",
+          "description": "Différences entre AC et DC, fréquence et période.",
+          "main": {
+            "label": "Support UE2 (AC/DC)",
+            "type": "ppt",
+            "url": "#"
+          },
+          "pdfs": [
+            {
+              "label": "Exercices Sinusoïdes",
+              "type": "pdf",
+              "url": "#"
+            }
+          ],
+          "videos": [],
+          "extras": []
+        }
+      ]
+    },
+    {
+      "id": "irve",
+      "name": "IRVE",
+      "description": "Infrastructure de Recharge de Véhicule Électrique.",
+      "icon": "BatteryCharging",
+      "items": [
+        {
+          "id": "irve-niv1",
+          "title": "Niveau 1 : Installation résidentielle",
+          "main": {
+            "label": "Présentation IRVE P1",
+            "type": "ppt",
+            "url": "#"
+          },
+          "pdfs": [
+            {
+              "label": "Norme NF C 15-100",
+              "type": "pdf",
+              "url": "#"
+            },
+            {
+              "label": "Guide installateur",
+              "type": "pdf",
+              "url": "#"
+            }
+          ],
+          "videos": [
+            {
+              "label": "Montage d'une Wallbox",
+              "type": "video",
+              "url": "#"
+            },
+            {
+              "label": "Webinaire Legrand",
+              "type": "video",
+              "url": "#"
+            }
+          ],
+          "extras": [
+            {
+              "label": "QCM de validation",
+              "type": "link",
+              "url": "#"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "teee",
+      "name": "TEEE",
+      "description": "Technicien d'Équipement en Électricité et Électronique.",
+      "icon": "Cpu",
+      "items": []
+    }
+  ]
+}

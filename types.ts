@@ -31,9 +31,13 @@ export interface AppData {
 
 declare global {
   interface Window {
-    electronAPI: {
+    electronAPI?: {
+      getData: () => Promise<AppData>;
+      saveData: (data: AppData) => Promise<{ success?: boolean; error?: string } | void>;
       selectFile: () => Promise<{ path: string; name: string } | null>;
       openPath: (path: string) => Promise<string>;
     };
+    // Legacy alias kept for backward compatibility with preload
+    api?: Window['electronAPI'];
   }
 }
