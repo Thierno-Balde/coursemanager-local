@@ -1,20 +1,25 @@
-export type ResourceType = 'ppt' | 'pdf' | 'video' | 'image' | 'link' | 'zip' | 'other';
+export type ResourceKind = 'file' | 'link' | 'cloud';
+export type ResourceCategory = 'main' | 'pdfs' | 'videos' | 'extras';
+export type ResourceFormat = 'ppt' | 'pdf' | 'video' | 'image' | 'link' | 'zip' | 'other';
 
 export interface Resource {
+  id: string;
   label: string;
-  type: ResourceType;
-  url: string; // Can be a local path "files/..." or a web URL "https://..."
-  description?: string;
+  kind: ResourceKind;
+  category: ResourceCategory;
+  format?: ResourceFormat | string;
+  path?: string; // absolute path for local files
+  relativePath?: string; // relative to userData/resources for cleanup
+  url?: string; // web URL or custom provider URL
+  provider?: string;
+  createdAt: string;
 }
 
 export interface CourseItem {
   id: string;
   title: string;
   description?: string;
-  main: Resource;      // Column 1
-  pdfs: Resource[];    // Column 2
-  videos: Resource[];  // Column 3
-  extras: Resource[];  // Column 4
+  resources: Resource[];
 }
 
 export interface Course {
@@ -34,7 +39,17 @@ declare global {
     electronAPI?: {
       getData: () => Promise<AppData>;
       saveData: (data: AppData) => Promise<{ success?: boolean; error?: string } | void>;
-      selectFile: () => Promise<{ path: string; name: string } | null>;
+      selectFile: () => Promise<{ path: string; name: string } | null>; // legacy
+      getResourcesDir: () => string | null;
+      importResourceFile: () => Promise<{
+        id: string;
+        name: string;
+        format?: string;
+        absolutePath?: string;
+        relativePath?: string;
+        error?: string;
+      } | null>;
+      deleteResourceFile: (relativePath: string) => Promise<{ success: boolean; error?: string } | void>;
       openPath: (path: string) => Promise<string>;
     };
     // Legacy alias kept for backward compatibility with preload

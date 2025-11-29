@@ -4,6 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "main": "dist-electron/main.js",
+  "build": {
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data"
+      }
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",

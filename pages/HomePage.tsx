@@ -14,10 +14,12 @@ const HomePage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseDesc, setNewCourseDesc] = useState('');
+  const [newCourseIcon, setNewCourseIcon] = useState('Folder');
 
   const openModal = () => {
     setNewCourseName('');
     setNewCourseDesc('');
+    setNewCourseIcon('Folder');
     setIsModalOpen(true);
   };
 
@@ -31,10 +33,10 @@ const HomePage: React.FC = () => {
     if (!newCourseName.trim()) return;
 
     const newCourse: Course = {
-      id: `course-${Date.now()}`,
+      id: crypto.randomUUID ? crypto.randomUUID() : `course-${Date.now()}`,
       name: newCourseName,
       description: newCourseDesc || "Aucune description.",
-      icon: "Folder", // Icône par défaut
+      icon: newCourseIcon,
       items: []
     };
 
@@ -116,7 +118,7 @@ const HomePage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateCourse} className="p-6 space-y-4">
+            <form onSubmit={handleCreateCourse} className="p-6 space-y-6">
               <div>
                 <label htmlFor="courseName" className="block text-sm font-medium text-slate-700 mb-1">
                   Nom du cours <span className="text-red-500">*</span>
@@ -147,7 +149,29 @@ const HomePage: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Icône
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {['Folder', 'BookOpen', 'Zap', 'Cpu', 'Code', 'Database', 'Globe', 'PenTool', 'Activity', 'Layers', 'Box', 'Terminal'].map((iconName) => (
+                    <button
+                      key={iconName}
+                      type="button"
+                      onClick={() => setNewCourseIcon(iconName)}
+                      className={`p-2 rounded-lg flex items-center justify-center transition-all ${newCourseIcon === iconName
+                        ? 'bg-brand-100 text-brand-600 ring-2 ring-brand-500'
+                        : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                        }`}
+                      title={iconName}
+                    >
+                      <Icon name={iconName} size={20} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeModal}

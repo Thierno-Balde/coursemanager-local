@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { ResourceBadge } from '../components/ResourceBadge';
-import { ArrowLeft, BookOpen, Download, FileText, MonitorPlay, Layers, Plus, X, FilePlus, PlusCircle, Link as LinkIcon } from 'lucide-react';
-import { CourseItem, Resource, ResourceType } from '../types';
+import { ArrowLeft, BookOpen, Download, FileText, MonitorPlay, Layers, Plus, X, FilePlus, PlusCircle, Link as LinkIcon, Trash2, FolderPlus } from 'lucide-react';
+import { CourseItem, Resource, ResourceCategory, ResourceKind } from '../types';
 
 const CoursePage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { courses, addModule, addResource } = useStore();
+  const { courses, addModule, addResource, deleteResource, deleteModule } = useStore();
 
   const initialCourse = courses.find(c => c.id === courseId);
-
-  // État local pour gérer les items du cours (dérivé du store maintenant)
-  const [items, setItems] = useState<CourseItem[]>(initialCourse ? initialCourse.items : []);
+  const items = initialCourse?.items || [];
 
   // --- ÉTATS MODALE MODULE (Ajout d'une ligne) ---
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
@@ -20,22 +18,67 @@ const CoursePage: React.FC = () => {
   const [newDesc, setNewDesc] = useState('');
   const [newMainLabel, setNewMainLabel] = useState('Support de cours');
   const [newMainUrl, setNewMainUrl] = useState('');
+  const [newMainFileInfo, setNewMainFileInfo] = useState<{
+    absolutePath?: string;
+    relativePath?: string;
+    name?: string;
+    format?: string;
+  } | null>(null);
 
   // --- ÉTATS MODALE RESSOURCE (Ajout dans une colonne) ---
   const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
   const [targetItemId, setTargetItemId] = useState<string | null>(null);
-  const [targetCategory, setTargetCategory] = useState<'pdfs' | 'videos' | 'extras' | null>(null);
+  const [targetCategory, setTargetCategory] = useState<ResourceCategory | null>(null);
 
   const [resLabel, setResLabel] = useState('');
   const [resUrl, setResUrl] = useState('');
-  const [resType, setResType] = useState<ResourceType>('pdf');
+  const [resFormat, setResFormat] = useState<string>('pdf');
+  const [resFileInfo, setResFileInfo] = useState<{
+    absolutePath?: string;
+    relativePath?: string;
+    name?: string;
+    format?: string;
+  } | null>(null);
 
-  // Mettre à jour les items si le cours change (navigation)
-  useEffect(() => {
-    if (initialCourse) {
-      setItems(initialCourse.items);
+  const guessFormat = (input?: string) => {
+    if (!input) return 'other';
+    const ext = input.split('.').pop()?.toLowerCase() || input.toLowerCase();
+    if (['pdf'].includes(ext)) return 'pdf';
+    if (['ppt', 'pptx'].includes(ext)) return 'ppt';
+    if (['mp4', 'mkv', 'avi', 'mov'].includes(ext)) return 'video';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'image';
+    if (['zip', 'rar', '7z'].includes(ext)) return 'zip';
+    if (ext.startsWith('http')) return 'link';
+    return ext;
+  };
+
+  const isHttp = (value?: string) => (value ? value.startsWith('http') : false);
+
+  const getResourcesByCategory = (item: CourseItem, category: ResourceCategory) =>
+    (item.resources || []).filter(res => res.category === category);
+
+  const handleDeleteResource = (itemId: string, resourceId: string, relativePath?: string) => {
+    if (!initialCourse) return;
+    deleteResource(initialCourse.id, itemId, resourceId, relativePath);
+  };
+
+  const handleDeleteModule = (moduleId: string) => {
+    if (!initialCourse) return;
+    deleteModule(initialCourse.id, moduleId);
+  };
+
+  const openResource = (resource?: Resource) => {
+    if (!resource) return;
+    if (resource.kind === 'file' && resource.path && window.electronAPI?.openPath) {
+      window.electronAPI.openPath(resource.path);
+      return;
     }
-  }, [initialCourse]);
+    if (resource.url) {
+      window.open(resource.url, '_blank');
+    } else if (resource.path && window.electronAPI?.openPath) {
+      window.electronAPI.openPath(resource.path);
+    }
+  };
 
   if (!initialCourse) {
     return (
@@ -57,20 +100,26 @@ const CoursePage: React.FC = () => {
     setNewTitle('');
     setNewDesc('');
     setNewMainLabel('Support de cours');
-    setNewMainLabel('Support de cours');
     setNewMainUrl('');
+    setNewMainFileInfo(null);
     setIsModuleModalOpen(true);
   };
 
   const handleSelectMainFile = async () => {
     if (window.electronAPI) {
-      const result = await window.electronAPI.selectFile();
-      if (result) {
-        setNewMainUrl(result.path);
+      const result = await window.electronAPI.importResourceFile?.();
+      if (result && !result.error) {
+        setNewMainFileInfo(result);
+        setNewMainUrl(result.absolutePath || result.relativePath || '');
         // Auto-fill label if empty or default
         if (!newMainLabel || newMainLabel === 'Support de cours') {
           setNewMainLabel(result.name);
         }
+        if (result.format) {
+          setResFormat(result.format);
+        }
+      } else if (result?.error) {
+        console.error(result.error);
       }
     } else {
       alert("Fonctionnalité disponible uniquement sur l'application de bureau.");
@@ -79,24 +128,34 @@ const CoursePage: React.FC = () => {
 
   const closeModuleModal = () => {
     setIsModuleModalOpen(false);
+    setNewMainFileInfo(null);
   };
 
   const handleAddModule = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
+    const resources: Resource[] = [];
+    const hasMain = newMainLabel.trim() || newMainUrl.trim() || newMainFileInfo;
+    if (hasMain) {
+      resources.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : `res-${Date.now()}`,
+        label: newMainLabel || newMainFileInfo?.name || 'Support',
+        kind: newMainFileInfo ? 'file' : isHttp(newMainUrl) ? 'link' : 'file',
+        category: 'main',
+        format: newMainFileInfo?.format || guessFormat(newMainFileInfo?.name || newMainUrl) || 'other',
+        path: newMainFileInfo?.absolutePath || (!isHttp(newMainUrl) ? newMainUrl : undefined),
+        relativePath: newMainFileInfo?.relativePath,
+        url: isHttp(newMainUrl) ? newMainUrl : undefined,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
     const newItem: CourseItem = {
-      id: `item-${Date.now()}`,
+      id: crypto.randomUUID ? crypto.randomUUID() : `item-${Date.now()}`,
       title: newTitle,
       description: newDesc,
-      main: {
-        label: newMainLabel || 'Support',
-        type: 'ppt',
-        url: newMainUrl || '#'
-      },
-      pdfs: [],
-      videos: [],
-      extras: []
+      resources,
     };
 
     if (initialCourse) {
@@ -111,11 +170,12 @@ const CoursePage: React.FC = () => {
     setTargetCategory(category);
     setResLabel('');
     setResUrl('');
+    setResFileInfo(null);
 
     // Définir un type par défaut intelligent selon la colonne
-    if (category === 'pdfs') setResType('pdf');
-    else if (category === 'videos') setResType('video');
-    else setResType('link');
+    if (category === 'pdfs') setResFormat('pdf');
+    else if (category === 'videos') setResFormat('video');
+    else setResFormat('link');
 
     setIsResourceModalOpen(true);
   };
@@ -124,21 +184,27 @@ const CoursePage: React.FC = () => {
     setIsResourceModalOpen(false);
     setTargetItemId(null);
     setTargetCategory(null);
+    setResFileInfo(null);
   };
 
   const handleAddResource = (e: React.FormEvent) => {
     e.preventDefault();
     if (!resLabel.trim() || !targetItemId || !targetCategory) return;
 
-    const newResource: Resource = {
+    const isFile = !!resFileInfo || (!isHttp(resUrl) && !!resUrl);
+    const resourceInput = {
       label: resLabel,
-      url: resUrl || '#',
-      type: resType
+      category: targetCategory,
+      kind: (isFile ? 'file' : 'link') as ResourceKind,
+      format: resFileInfo?.format || guessFormat(resFileInfo?.name || resUrl || resFormat),
+      path: resFileInfo?.absolutePath || (isFile ? resUrl : undefined),
+      relativePath: resFileInfo?.relativePath,
+      url: !isFile && resUrl ? resUrl : undefined,
     };
 
     // Mise à jour via le store
     if (initialCourse && targetItemId && targetCategory) {
-      addResource(initialCourse.id, targetItemId, targetCategory, newResource);
+      addResource(initialCourse.id, targetItemId, resourceInput);
     }
 
     closeResourceModal();
@@ -146,21 +212,19 @@ const CoursePage: React.FC = () => {
 
   const handleSelectResFile = async () => {
     if (window.electronAPI) {
-      const result = await window.electronAPI.selectFile();
-      if (result) {
-        setResUrl(result.path);
+      const result = await window.electronAPI.importResourceFile?.();
+      if (result && !result.error) {
+        setResFileInfo(result);
+        setResUrl(result.absolutePath || result.relativePath || '');
         // Auto-fill label if empty
         if (!resLabel) {
           setResLabel(result.name);
         }
 
-        // Auto-detect type based on extension
-        const ext = result.name.split('.').pop()?.toLowerCase();
-        if (['pdf'].includes(ext || '')) setResType('pdf');
-        else if (['ppt', 'pptx'].includes(ext || '')) setResType('ppt');
-        else if (['mp4', 'mkv', 'avi'].includes(ext || '')) setResType('video');
-        else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) setResType('image');
-        else if (['zip', 'rar', '7z'].includes(ext || '')) setResType('zip');
+        const guessed = guessFormat(result.format || result.name);
+        setResFormat(guessed);
+      } else if (result?.error) {
+        console.error(result.error);
       }
     } else {
       alert("Fonctionnalité disponible uniquement sur l'application de bureau.");
@@ -218,16 +282,16 @@ const CoursePage: React.FC = () => {
 
           {/* Table Header (Hidden on small screens) */}
           <div className="hidden lg:grid grid-cols-12 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider sticky top-16 z-10">
-            <div className="col-span-4 p-4 border-r border-slate-200 flex items-center gap-2">
+            <div className="col-span-4 px-6 py-4 border-r border-slate-200 flex items-center gap-2">
               <BookOpen size={14} /> Titre / Support Principal
             </div>
-            <div className="col-span-3 p-4 border-r border-slate-200 flex items-center gap-2">
+            <div className="col-span-3 px-6 py-4 border-r border-slate-200 flex items-center gap-2">
               <FileText size={14} /> Documents & PDF
             </div>
-            <div className="col-span-3 p-4 border-r border-slate-200 flex items-center gap-2">
+            <div className="col-span-3 px-6 py-4 border-r border-slate-200 flex items-center gap-2">
               <MonitorPlay size={14} /> Vidéos
             </div>
-            <div className="col-span-2 p-4 flex items-center gap-2">
+            <div className="col-span-2 px-6 py-4 flex items-center gap-2">
               <Layers size={14} /> Autres Ressources
             </div>
           </div>
@@ -235,113 +299,140 @@ const CoursePage: React.FC = () => {
           {/* Rows */}
           <div className="divide-y divide-slate-100">
             {items.length > 0 ? (
-              items.map((item, index) => (
-                <div key={item.id} className="lg:grid lg:grid-cols-12 hover:bg-slate-50/50 transition-colors group">
+              items.map((item, index) => {
+                const mainResource = getResourcesByCategory(item, 'main')[0];
+                const pdfResources = getResourcesByCategory(item, 'pdfs');
+                const videoResources = getResourcesByCategory(item, 'videos');
+                const extraResources = getResourcesByCategory(item, 'extras');
 
-                  {/* COL 1: Main Title & Support (Large) */}
-                  <div className="col-span-4 p-6 lg:border-r border-slate-100">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold mr-3 shrink-0 mt-0.5">
-                        {index + 1}
-                      </span>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1">
-                          {item.title}
-                        </h3>
-                        {item.description && (
-                          <p className="text-slate-500 text-sm mb-4 leading-relaxed">
-                            {item.description}
-                          </p>
-                        )}
+                return (
+                  <div key={item.id} className="lg:grid lg:grid-cols-12 hover:bg-slate-50/50 transition-colors group">
 
-                        {/* Main Action Button */}
-                        <div className="mt-3">
-                          <button
-                            onClick={() => {
-                              if (window.electronAPI) {
-                                window.electronAPI.openPath(item.main.url);
-                              } else {
-                                window.open(item.main.url, '_blank');
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-50 text-brand-700 rounded-lg border border-brand-200 hover:bg-brand-100 hover:border-brand-300 hover:shadow-sm transition-all text-sm font-medium w-full sm:w-auto justify-center sm:justify-start"
-                          >
-                            <Download size={18} />
-                            <span>{item.main.label}</span>
-                          </button>
+                    {/* COL 1: Main Title & Support (Large) */}
+                    <div className="col-span-4 p-6 lg:border-r border-slate-100">
+                      <div className="flex items-start justify-between mb-2 gap-3">
+                        <div className="flex">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold mr-3 shrink-0 mt-0.5">
+                            {index + 1}
+                          </span>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1">
+                              {item.title}
+                            </h3>
+                            {item.description && (
+                              <p className="text-slate-500 text-sm mb-4 leading-relaxed">
+                                {item.description}
+                              </p>
+                            )}
+
+                            {/* Main Action Button */}
+                            <div className="mt-3">
+                              <button
+                                onClick={() => openResource(mainResource)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-50 text-brand-700 rounded-lg border border-brand-200 hover:bg-brand-100 hover:border-brand-300 hover:shadow-sm transition-all text-sm font-medium w-full sm:w-auto justify-center sm:justify-start"
+                                disabled={!mainResource}
+                              >
+                                <Download size={18} />
+                                <span>{mainResource ? mainResource.label : 'Support non défini'}</span>
+                              </button>
+                            </div>
+                          </div>
                         </div>
+
+                        <button
+                          onClick={() => handleDeleteModule(item.id)}
+                          className="text-slate-400 hover:text-red-600 transition-colors"
+                          title="Supprimer ce module"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </div>
+
+                    {/* COL 2: PDFs */}
+                    <div className="col-span-3 p-4 lg:p-6 lg:border-r border-slate-100 bg-slate-50/30 lg:bg-transparent flex flex-col">
+                      <div className="flex items-center justify-between lg:hidden mb-2">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase">Documents</h4>
+                      </div>
+
+                      <div className="flex flex-col gap-2 flex-1">
+                        {pdfResources.map((res) => (
+                          <ResourceBadge
+                            key={res.id}
+                            resource={res}
+                            onOpen={() => openResource(res)}
+                            onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => openResourceModal(item.id, 'pdfs')}
+                        className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
+                        title="Ajouter un document"
+                      >
+                        <PlusCircle size={14} />
+                        Ajouter PDF/Doc
+                      </button>
+                    </div>
+
+                    {/* COL 3: Videos */}
+                    <div className="col-span-3 p-4 lg:p-6 lg:border-r border-slate-100 flex flex-col">
+                      <div className="flex items-center justify-between lg:hidden mb-2">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase">Vidéos</h4>
+                      </div>
+
+                      <div className="flex flex-col gap-2 flex-1">
+                        {videoResources.map((res) => (
+                          <ResourceBadge
+                            key={res.id}
+                            resource={res}
+                            onOpen={() => openResource(res)}
+                            onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => openResourceModal(item.id, 'videos')}
+                        className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
+                        title="Ajouter une vidéo"
+                      >
+                        <PlusCircle size={14} />
+                        Ajouter Vidéo
+                      </button>
+                    </div>
+
+                    {/* COL 4: Extras */}
+                    <div className="col-span-2 p-4 lg:p-6 bg-slate-50/30 lg:bg-transparent flex flex-col">
+                      <div className="flex items-center justify-between lg:hidden mb-2">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase">Divers</h4>
+                      </div>
+
+                      <div className="flex flex-col gap-2 flex-1">
+                        {extraResources.map((res) => (
+                          <ResourceBadge
+                            key={res.id}
+                            resource={res}
+                            onOpen={() => openResource(res)}
+                            onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => openResourceModal(item.id, 'extras')}
+                        className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
+                        title="Ajouter une ressource"
+                      >
+                        <PlusCircle size={14} />
+                        Ajouter Autre
+                      </button>
+                    </div>
+
                   </div>
-
-                  {/* COL 2: PDFs */}
-                  <div className="col-span-3 p-4 lg:p-6 lg:border-r border-slate-100 bg-slate-50/30 lg:bg-transparent flex flex-col">
-                    <div className="flex items-center justify-between lg:hidden mb-2">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase">Documents</h4>
-                    </div>
-
-                    <div className="flex flex-col gap-2 flex-1">
-                      {item.pdfs.map((res, i) => (
-                        <ResourceBadge key={i} resource={res} />
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => openResourceModal(item.id, 'pdfs')}
-                      className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
-                      title="Ajouter un document"
-                    >
-                      <PlusCircle size={14} />
-                      Ajouter PDF/Doc
-                    </button>
-                  </div>
-
-                  {/* COL 3: Videos */}
-                  <div className="col-span-3 p-4 lg:p-6 lg:border-r border-slate-100 flex flex-col">
-                    <div className="flex items-center justify-between lg:hidden mb-2">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase">Vidéos</h4>
-                    </div>
-
-                    <div className="flex flex-col gap-2 flex-1">
-                      {item.videos.map((res, i) => (
-                        <ResourceBadge key={i} resource={res} />
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => openResourceModal(item.id, 'videos')}
-                      className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
-                      title="Ajouter une vidéo"
-                    >
-                      <PlusCircle size={14} />
-                      Ajouter Vidéo
-                    </button>
-                  </div>
-
-                  {/* COL 4: Extras */}
-                  <div className="col-span-2 p-4 lg:p-6 bg-slate-50/30 lg:bg-transparent flex flex-col">
-                    <div className="flex items-center justify-between lg:hidden mb-2">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase">Divers</h4>
-                    </div>
-
-                    <div className="flex flex-col gap-2 flex-1">
-                      {item.extras.map((res, i) => (
-                        <ResourceBadge key={i} resource={res} />
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={() => openResourceModal(item.id, 'extras')}
-                      className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
-                      title="Ajouter une ressource"
-                    >
-                      <PlusCircle size={14} />
-                      Ajouter Autre
-                    </button>
-                  </div>
-
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="p-12 text-center flex flex-col items-center">
                 <div className="bg-slate-100 p-4 rounded-full mb-4">
@@ -378,14 +469,71 @@ const CoursePage: React.FC = () => {
                 <label htmlFor="itemDesc" className="block text-sm font-medium text-slate-700 mb-1">Description</label>
                 <textarea id="itemDesc" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Détails..." rows={2} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none resize-none" />
               </div>
-              <div className="pt-2 border-t border-slate-100">
-                <h4 className="text-xs font-bold text-slate-500 uppercase mb-3">Support Principal</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <input type="text" value={newMainLabel} onChange={(e) => setNewMainLabel(e.target.value)} placeholder="Nom du fichier" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
-                  <div className="flex gap-2">
-                    <input type="text" value={newMainUrl} onChange={(e) => setNewMainUrl(e.target.value)} placeholder="Lien / Chemin" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
-                    <button type="button" onClick={handleSelectMainFile} className="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-600">Parcourir</button>
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                  <FileText size={16} className="text-brand-600" />
+                  Support Principal
+                </h4>
+
+                <div className="space-y-3">
+                  {/* File Selection Area */}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Fichier ou Lien</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newMainUrl}
+                          onChange={(e) => setNewMainUrl(e.target.value)}
+                          placeholder="https://... ou chemin fichier"
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSelectMainFile}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
+                        >
+                          <FolderPlus size={16} />
+                          Parcourir
+                        </button>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Label Input */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Nom affiché</label>
+                    <input
+                      type="text"
+                      value={newMainLabel}
+                      onChange={(e) => setNewMainLabel(e.target.value)}
+                      placeholder="Ex: Support de cours PDF"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm"
+                    />
+                  </div>
+
+                  {/* File Info Badge */}
+                  {newMainFileInfo && (
+                    <div className="bg-brand-50 border border-brand-100 rounded-lg p-3 flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-md text-brand-600 shadow-sm">
+                        <FileText size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-brand-900 truncate">{newMainFileInfo.name}</p>
+                        <p className="text-xs text-brand-600 truncate">{newMainFileInfo.absolutePath}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewMainFileInfo(null);
+                          setNewMainUrl('');
+                        }}
+                        className="text-brand-400 hover:text-brand-700 p-1"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -422,35 +570,79 @@ const CoursePage: React.FC = () => {
 
               <div>
                 <label htmlFor="resLabel" className="block text-sm font-medium text-slate-700 mb-1">Nom affiché <span className="text-red-500">*</span></label>
-                <input type="text" id="resLabel" value={resLabel} onChange={(e) => setResLabel(e.target.value)} placeholder="Ex: Fiche exercice..." className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" autoFocus required />
+                <input type="text" id="resLabel" value={resLabel} onChange={(e) => setResLabel(e.target.value)} placeholder="Ex: Fiche exercice..." className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" required />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="resType" className="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                  <select
-                    id="resType"
-                    value={resType}
-                    onChange={(e) => setResType(e.target.value as ResourceType)}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none bg-white"
-                  >
-                    <option value="pdf">PDF Document</option>
-                    <option value="ppt">PowerPoint</option>
-                    <option value="video">Vidéo</option>
-                    <option value="image">Image</option>
-                    <option value="zip">Archive ZIP</option>
-                    <option value="link">Lien Web</option>
-                    <option value="other">Autre</option>
-                  </select>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Type de ressource</label>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { id: 'pdf', label: 'PDF', icon: FileText },
+                    { id: 'ppt', label: 'PowerPoint', icon: MonitorPlay },
+                    { id: 'video', label: 'Vidéo', icon: MonitorPlay },
+                    { id: 'image', label: 'Image', icon: Layers },
+                    { id: 'zip', label: 'Archive', icon: Layers },
+                    { id: 'link', label: 'Lien Web', icon: LinkIcon },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setResFormat(type.id)}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${resFormat === type.id
+                        ? 'bg-brand-50 border-brand-500 text-brand-700'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                      <type.icon size={20} className="mb-1" />
+                      <span className="text-xs font-medium">{type.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div>
-                <label htmlFor="resUrl" className="block text-sm font-medium text-slate-700 mb-1">Lien / Chemin fichier</label>
+                <label htmlFor="resUrl" className="block text-sm font-medium text-slate-700 mb-1">Fichier ou Lien</label>
                 <div className="flex gap-2">
-                  <input type="text" id="resUrl" value={resUrl} onChange={(e) => setResUrl(e.target.value)} placeholder="https://... ou files/..." className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" />
-                  <button type="button" onClick={handleSelectResFile} className="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-600">Parcourir</button>
+                  <input
+                    type="text"
+                    id="resUrl"
+                    value={resUrl}
+                    onChange={(e) => setResUrl(e.target.value)}
+                    placeholder="https://... ou chemin fichier"
+                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSelectResFile}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+                  >
+                    <FolderPlus size={16} />
+                    Parcourir
+                  </button>
                 </div>
+
+                {/* File Info Badge for Resource */}
+                {resFileInfo && (
+                  <div className="mt-3 bg-brand-50 border border-brand-100 rounded-lg p-3 flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-md text-brand-600 shadow-sm">
+                      <FileText size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-brand-900 truncate">{resFileInfo.name}</p>
+                      <p className="text-xs text-brand-600 truncate">{resFileInfo.absolutePath}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResFileInfo(null);
+                        setResUrl('');
+                      }}
+                      className="text-brand-400 hover:text-brand-700 p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4">

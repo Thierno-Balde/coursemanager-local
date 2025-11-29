@@ -1,37 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Course, CourseItem, Resource, AppData } from '../types';
+import { Course, CourseItem, Resource, ResourceCategory, ResourceKind, AppData } from '../types';
 import { COURSE_DATA } from '../data';
+import { migrateData } from '../utils/migrate';
+import { getResourcesDir } from '../utils/paths';
+
+type NewResourceInput = {
+  label: string;
+  category: ResourceCategory;
+  kind: ResourceKind;
+  format?: string;
+  path?: string;
+  relativePath?: string;
+  url?: string;
+  provider?: string;
+};
 
 interface StoreContextType {
   courses: Course[];
   addCourse: (course: Course) => void;
   addModule: (courseId: string, module: CourseItem) => void;
-  addResource: (courseId: string, moduleId: string, category: 'pdfs' | 'videos' | 'extras', resource: Resource) => void;
+  addResource: (courseId: string, moduleId: string, resource: NewResourceInput) => void;
+  deleteResource: (courseId: string, moduleId: string, resourceId: string, relativePath?: string) => void;
+  deleteModule: (courseId: string, moduleId: string) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'course_manager_data';
+const generateId = (prefix: string) => `${prefix}-${crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)}`;
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const loadFallbackData = (): Course[] => {
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      try {
-        const storedData = localStorage.getItem(STORAGE_KEY);
-        if (storedData) {
-          const parsedData: AppData = JSON.parse(storedData);
-          if (Array.isArray(parsedData.courses)) {
-            return parsedData.courses;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load data from localStorage:', error);
-      }
-    }
-    return COURSE_DATA.courses;
+    return migrateData(COURSE_DATA).courses;
   };
 
-  // Start with seed data; hydrate from Electron or localStorage after mount
+  // Start with seed data; hydrate from Electron after mount
   const [courses, setCourses] = useState<Course[]>(() => loadFallbackData());
 
   useEffect(() => {
@@ -39,9 +41,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const hydrate = async () => {
       if (typeof window !== 'undefined' && window.electronAPI?.getData) {
         try {
-          const data = await window.electronAPI.getData();
+          const raw = await window.electronAPI.getData();
+          const migrated = migrateData(raw);
           if (!cancelled) {
-            setCourses(Array.isArray(data?.courses) ? data.courses : COURSE_DATA.courses);
+            setCourses(migrated.courses.length ? migrated.courses : loadFallbackData());
           }
           return;
         } catch (error) {
@@ -65,13 +68,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         window.electronAPI.saveData({ courses: next }).catch(error => {
           console.error('Failed to save data to Electron store:', error);
         });
-      } else if (typeof localStorage !== 'undefined') {
-        try {
-          const dataToSave: AppData = { courses: next };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-        } catch (error) {
-          console.error('Failed to save data to localStorage:', error);
-        }
       }
       return next;
     });
@@ -82,34 +78,105 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addModule = (courseId: string, module: CourseItem) => {
-    persistCourses(prev => prev.map(course => {
-      if (course.id === courseId) {
-        return { ...course, items: [...course.items, module] };
-      }
-      return course;
-    }));
+    const normalizedModule: CourseItem = {
+      ...module,
+      resources: (module.resources || []).map(res => ({
+        ...res,
+        id: res.id || generateId('res'),
+        createdAt: res.createdAt || new Date().toISOString(),
+      })),
+    };
+    persistCourses(prev =>
+      prev.map(course => {
+        if (course.id === courseId) {
+          return { ...course, items: [...course.items, normalizedModule] };
+        }
+        return course;
+      })
+    );
   };
 
-  const addResource = (courseId: string, moduleId: string, category: 'pdfs' | 'videos' | 'extras', resource: Resource) => {
-    persistCourses(prev => prev.map(course => {
-      if (course.id === courseId) {
+  const addResource = (courseId: string, moduleId: string, resourceInput: NewResourceInput) => {
+    const resourcesDir = getResourcesDir();
+
+    // Fix: relativePath from fileManager includes "resources/", but resourcesDir ALREADY points to that folder.
+    // We need to strip "resources/" from relativePath to avoid duplication (.../resources/resources/file.pdf).
+    let cleanRelative = resourceInput.relativePath || '';
+    if (cleanRelative.startsWith('resources/') || cleanRelative.startsWith('resources\\')) {
+      cleanRelative = cleanRelative.substring(10); // Remove "resources/" (10 chars)
+    }
+    // Also remove leading slashes just in case
+    cleanRelative = cleanRelative.replace(/^[/\\\\]+/, '');
+
+    const rebuiltPath = resourceInput.relativePath && resourcesDir
+      ? `${resourcesDir}/${cleanRelative}`
+      : resourceInput.path;
+
+    const resource: Resource = {
+      ...resourceInput,
+      path: rebuiltPath || resourceInput.path,
+      id: generateId('res'),
+      createdAt: new Date().toISOString(),
+    };
+    persistCourses(prev =>
+      prev.map(course => {
+        if (course.id === courseId) {
+          const updatedItems = course.items.map(item => {
+            if (item.id === moduleId) {
+              return { ...item, resources: [...(item.resources || []), resource] };
+            }
+            return item;
+          });
+          return { ...course, items: updatedItems };
+        }
+        return course;
+      })
+    );
+  };
+
+  const deleteResource = (courseId: string, moduleId: string, resourceId: string, relativePath?: string) => {
+    if (relativePath && window.electronAPI?.deleteResourceFile) {
+      window.electronAPI.deleteResourceFile(relativePath).catch(error => {
+        console.error('Failed to delete physical resource file:', error);
+      });
+    }
+
+    persistCourses(prev =>
+      prev.map(course => {
+        if (course.id !== courseId) return course;
         const updatedItems = course.items.map(item => {
-          if (item.id === moduleId) {
-            return {
-              ...item,
-              [category]: [...item[category], resource]
-            };
-          }
-          return item;
+          if (item.id !== moduleId) return item;
+          return { ...item, resources: (item.resources || []).filter(r => r.id !== resourceId) };
         });
         return { ...course, items: updatedItems };
-      }
-      return course;
-    }));
+      })
+    );
+  };
+
+  const deleteModule = (courseId: string, moduleId: string) => {
+    persistCourses(prev =>
+      prev.map(course => {
+        if (course.id !== courseId) return course;
+
+        const moduleToDelete = course.items.find(item => item.id === moduleId);
+        if (moduleToDelete && window.electronAPI?.deleteResourceFile) {
+          moduleToDelete.resources?.forEach(res => {
+            if (res.relativePath) {
+              window.electronAPI!.deleteResourceFile(res.relativePath).catch(err => {
+                console.error('Failed to delete resource during module removal:', err);
+              });
+            }
+          });
+        }
+
+        const updatedItems = course.items.filter(item => item.id !== moduleId);
+        return { ...course, items: updatedItems };
+      })
+    );
   };
 
   return (
-    <StoreContext.Provider value={{ courses, addCourse, addModule, addResource }}>
+    <StoreContext.Provider value={{ courses, addCourse, addModule, addResource, deleteResource, deleteModule }}>
       {children}
     </StoreContext.Provider>
   );
