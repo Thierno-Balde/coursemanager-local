@@ -165,7 +165,7 @@ const CoursePage: React.FC = () => {
   };
 
   // --- GESTION RESSOURCES ---
-  const openResourceModal = (itemId: string, category: 'pdfs' | 'videos' | 'extras') => {
+  const openResourceModal = (itemId: string, category: 'main' | 'pdfs' | 'videos' | 'extras') => {
     setTargetItemId(itemId);
     setTargetCategory(category);
     setResLabel('');
@@ -281,7 +281,7 @@ const CoursePage: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
           {/* Table Header (Hidden on small screens) */}
-          <div className="hidden lg:grid grid-cols-12 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider sticky top-16 z-10">
+          <div className="hidden lg:grid grid-cols-12 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
             <div className="col-span-4 px-6 py-4 border-r border-slate-200 flex items-center gap-2">
               <BookOpen size={14} /> Titre / Support Principal
             </div>
@@ -297,7 +297,7 @@ const CoursePage: React.FC = () => {
           </div>
 
           {/* Rows */}
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 lg:pt-2">
             {items.length > 0 ? (
               items.map((item, index) => {
                 const mainResource = getResourcesByCategory(item, 'main')[0];
@@ -315,8 +315,8 @@ const CoursePage: React.FC = () => {
                           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold mr-3 shrink-0 mt-0.5">
                             {index + 1}
                           </span>
-                          <div className="flex-1">
-                            <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-slate-900 leading-tight mb-1 break-words">
                               {item.title}
                             </h3>
                             {item.description && (
@@ -325,17 +325,26 @@ const CoursePage: React.FC = () => {
                               </p>
                             )}
 
-                            {/* Main Action Button */}
-                            <div className="mt-3">
-                              <button
-                                onClick={() => openResource(mainResource)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-50 text-brand-700 rounded-lg border border-brand-200 hover:bg-brand-100 hover:border-brand-300 hover:shadow-sm transition-all text-sm font-medium w-full sm:w-auto justify-center sm:justify-start"
-                                disabled={!mainResource}
-                              >
-                                <Download size={18} />
-                                <span>{mainResource ? mainResource.label : 'Support non défini'}</span>
-                              </button>
+                            {/* Main Resources List */}
+                            <div className="mt-3 flex flex-col gap-2">
+                              {getResourcesByCategory(item, 'main').map((res) => (
+                                <ResourceBadge
+                                  key={res.id}
+                                  resource={res}
+                                  onOpen={() => openResource(res)}
+                                  onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                                />
+                              ))}
                             </div>
+
+                            <button
+                              onClick={() => openResourceModal(item.id, 'main')}
+                              className="mt-3 flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-brand-600 transition-colors py-1 px-2 hover:bg-slate-100 rounded-md w-fit"
+                              title="Ajouter un support principal"
+                            >
+                              <PlusCircle size={14} />
+                              Ajouter Support
+                            </button>
                           </div>
                         </div>
 
@@ -563,8 +572,9 @@ const CoursePage: React.FC = () => {
             <form onSubmit={handleAddResource} className="p-6 space-y-4">
               <div className="text-sm text-slate-500 mb-4 bg-blue-50 text-blue-700 px-3 py-2 rounded-md border border-blue-100">
                 Ajout dans la colonne : <strong>
-                  {targetCategory === 'pdfs' ? 'Documents & PDF' :
-                    targetCategory === 'videos' ? 'Vidéos' : 'Autres Ressources'}
+                  {targetCategory === 'main' ? 'Support Principal' :
+                    targetCategory === 'pdfs' ? 'Documents & PDF' :
+                      targetCategory === 'videos' ? 'Vidéos' : 'Autres Ressources'}
                 </strong>
               </div>
 
