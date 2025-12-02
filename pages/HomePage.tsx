@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { Icon } from '../components/Icon';
-import { Plus, X, FolderPlus } from 'lucide-react';
+import { Plus, X, FolderPlus, Trash2 } from 'lucide-react';
 import { Course } from '../types';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   // Utilisation du store global
-  const { courses, addCourse } = useStore();
+  const { courses, addCourse, deleteCourse } = useStore();
 
   // États pour la modale et le formulaire
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,6 +44,13 @@ const HomePage: React.FC = () => {
     closeModal();
   };
 
+  const handleDeleteCourse = (e: React.MouseEvent, courseId: string, courseName: string) => {
+    e.stopPropagation(); // Empêche la navigation
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le cours "${courseName}" ? Cette action est irréversible.`)) {
+      deleteCourse(courseId);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
       {/* Header Section */}
@@ -71,8 +78,15 @@ const HomePage: React.FC = () => {
           <div
             key={course.id}
             onClick={() => navigate(`/course/${course.id}`)}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg hover:border-brand-500 transition-all duration-300 cursor-pointer group"
+            className="relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg hover:border-brand-500 transition-all duration-300 cursor-pointer group"
           >
+            <button
+              onClick={(e) => handleDeleteCourse(e, course.id, course.name)}
+              className="absolute top-2 right-2 p-2 text-slate-400 bg-white/50 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 transition-all z-10"
+              title="Supprimer le cours"
+            >
+              <Trash2 size={18} />
+            </button>
             <div className="h-32 bg-gradient-to-r from-slate-100 to-slate-200 flex items-center justify-center group-hover:from-brand-50 group-hover:to-brand-100 transition-colors">
               <div className="p-4 bg-white rounded-full shadow-sm text-slate-700 group-hover:text-brand-600 group-hover:scale-110 transition-transform">
                 <Icon name={course.icon || 'BookOpen'} size={32} />

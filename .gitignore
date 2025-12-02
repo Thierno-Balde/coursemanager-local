@@ -23,3 +23,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Media (avoid pushing screenshots)
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.bmp

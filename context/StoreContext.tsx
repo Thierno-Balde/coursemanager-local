@@ -22,6 +22,7 @@ interface StoreContextType {
   addResource: (courseId: string, moduleId: string, resource: NewResourceInput) => void;
   deleteResource: (courseId: string, moduleId: string, resourceId: string, relativePath?: string) => void;
   deleteModule: (courseId: string, moduleId: string) => void;
+  deleteCourse: (courseId: string) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -175,8 +176,29 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     );
   };
 
+  const deleteCourse = (courseId: string) => {
+    persistCourses(prev => {
+      const courseToDelete = prev.find(c => c.id === courseId);
+
+      // Delete all associated resource files
+      if (courseToDelete && window.electronAPI?.deleteResourceFile) {
+        courseToDelete.items.forEach(item => {
+          item.resources?.forEach(res => {
+            if (res.relativePath) {
+              window.electronAPI!.deleteResourceFile(res.relativePath).catch(err => {
+                console.error('Failed to delete resource during course removal:', err);
+              });
+            }
+          });
+        });
+      }
+
+      return prev.filter(course => course.id !== courseId);
+    });
+  };
+
   return (
-    <StoreContext.Provider value={{ courses, addCourse, addModule, addResource, deleteResource, deleteModule }}>
+    <StoreContext.Provider value={{ courses, addCourse, addModule, addResource, deleteResource, deleteModule, deleteCourse }}>
       {children}
     </StoreContext.Provider>
   );

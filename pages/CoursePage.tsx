@@ -57,14 +57,18 @@ const CoursePage: React.FC = () => {
   const getResourcesByCategory = (item: CourseItem, category: ResourceCategory) =>
     (item.resources || []).filter(res => res.category === category);
 
-  const handleDeleteResource = (itemId: string, resourceId: string, relativePath?: string) => {
+  const handleDeleteResource = (itemId: string, resourceId: string, resourceLabel: string, relativePath?: string) => {
     if (!initialCourse) return;
-    deleteResource(initialCourse.id, itemId, resourceId, relativePath);
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la ressource "${resourceLabel}" ? Cette action est irréversible.`)) {
+      deleteResource(initialCourse.id, itemId, resourceId, relativePath);
+    }
   };
 
-  const handleDeleteModule = (moduleId: string) => {
+  const handleDeleteModule = (moduleId: string, moduleTitle: string) => {
     if (!initialCourse) return;
-    deleteModule(initialCourse.id, moduleId);
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le module "${moduleTitle}" et toutes ses ressources ? Cette action est irréversible.`)) {
+      deleteModule(initialCourse.id, moduleId);
+    }
   };
 
   const openResource = (resource?: Resource) => {
@@ -332,7 +336,7 @@ const CoursePage: React.FC = () => {
                                   key={res.id}
                                   resource={res}
                                   onOpen={() => openResource(res)}
-                                  onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                                        onDelete={() => handleDeleteResource(item.id, res.id, res.label, res.relativePath)}
                                 />
                               ))}
                             </div>
@@ -349,7 +353,7 @@ const CoursePage: React.FC = () => {
                         </div>
 
                         <button
-                          onClick={() => handleDeleteModule(item.id)}
+                          onClick={() => handleDeleteModule(item.id, item.title)}
                           className="text-slate-400 hover:text-red-600 transition-colors"
                           title="Supprimer ce module"
                         >
@@ -370,7 +374,7 @@ const CoursePage: React.FC = () => {
                             key={res.id}
                             resource={res}
                             onOpen={() => openResource(res)}
-                            onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                                  onDelete={() => handleDeleteResource(item.id, res.id, res.label, res.relativePath)}
                           />
                         ))}
                       </div>
@@ -397,7 +401,7 @@ const CoursePage: React.FC = () => {
                             key={res.id}
                             resource={res}
                             onOpen={() => openResource(res)}
-                            onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                                  onDelete={() => handleDeleteResource(item.id, res.id, res.label, res.relativePath)}
                           />
                         ))}
                       </div>
@@ -424,7 +428,7 @@ const CoursePage: React.FC = () => {
                             key={res.id}
                             resource={res}
                             onOpen={() => openResource(res)}
-                            onDelete={() => handleDeleteResource(item.id, res.id, res.relativePath)}
+                                  onDelete={() => handleDeleteResource(item.id, res.id, res.label, res.relativePath)}
                           />
                         ))}
                       </div>
