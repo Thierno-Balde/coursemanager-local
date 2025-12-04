@@ -17,7 +17,8 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.mjs'),
             contextIsolation: true,
             nodeIntegration: false,
-            sandbox: false
+            sandbox: false,
+            webSecurity: false, // INSECURE: FOR DEBUGGING ONLY
         },
     });
 
@@ -73,6 +74,24 @@ app.whenReady().then(async () => {
         return { path: filePath, name: fileName };
     });
 
+    // IPC Handler: Open Directory Dialog
+    ipcMain.handle('dialog:openDirectory', async () => {
+        const result = await dialog.showOpenDialog({
+            properties: ['openDirectory'],
+        });
+
+        if (result.canceled || result.filePaths.length === 0) {
+            return null;
+        }
+
+        return result.filePaths[0];
+    });
+
+    // IPC Handler: Get App Version
+    ipcMain.handle('app:getVersion', () => {
+        return app.getVersion();
+    });
+
     // Synchronous getter for resources directory (renderer uses it to rebuild paths)
     ipcMain.on('resources:getDir', (event) => {
         const { resourcesDir } = getPaths();
@@ -119,6 +138,25 @@ app.whenReady().then(async () => {
             console.error('Failed to delete resource file:', error);
             return { success: false, error: (error as Error).message };
         }
+    });
+
+    // IPC Handler: Set Root Directory
+    ipcMain.handle('settings:setRoot', async (_event, newPath: string) => {
+        try {
+            const { setRootDirectory } = await import('./storage.js');
+            await setRootDirectory(newPath);
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to set root directory:', error);
+            return { success: false, error: (error as Error).message };
+        }
+    });
+
+    // IPC Handler: Get Root Directory
+    ipcMain.handle('settings:getRoot', async () => {
+        const { getPaths } = await import('./storage.js');
+        const { rootDirectory } = getPaths();
+        return rootDirectory;
     });
 
     // IPC Handler: Open Path (File or Folder)

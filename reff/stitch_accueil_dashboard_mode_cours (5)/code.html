@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestion des Ressources - Mode Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+            },
+            fontFamily: {
+              "display": ["Lexend", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200">
+<div class="relative flex min-h-screen w-full">
+<!-- SideNavBar -->
+<aside class="flex-shrink-0 w-64 bg-white dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+<div class="p-4 flex flex-col gap-4 flex-grow">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Admin user avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBcNYtzELXxScvY7hvszkHd2MSqUa1VyN2MU99Sv_BT2Jim2lAyPzLaW1eBPpBIL8d5axXYLvnwlCGE7SMAWPjIPC3goFPxvtRF_Tf-GKPpkaPcadHf3C8Vfecyc1QV-SwO04RtVZS4FnLVYdAx7O79zK1I9xfuigZaH88TiE7So-_14Fx-xHkhpFmSt8KtzdH1zbSvXu1vxRKPw6l9tpT6jXRiiwI20LppSztc-KXcM3Ugp010E-SNTd-CMC5TMZsjMO7B2damauQ");'></div>
+<div class="flex flex-col">
+<h1 class="text-base font-medium leading-normal text-slate-900 dark:text-white">Admin Mode</h1>
+<p class="text-sm font-normal leading-normal text-slate-500 dark:text-slate-400">admin@formation.com</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">book</span>
+<p class="text-sm font-medium leading-normal">Modules</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">group</span>
+<p class="text-sm font-medium leading-normal">Trainers</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">folder</span>
+<p class="text-sm font-medium leading-normal">Library</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium leading-normal">Settings</p>
+</a>
+</nav>
+</div>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">logout</span>
+<p class="text-sm font-medium leading-normal">Log Out</p>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-8 overflow-y-auto">
+<div class="max-w-7xl mx-auto">
+<!-- PageHeading -->
+<div class="flex flex-wrap justify-between items-center gap-4 mb-8">
+<h1 class="text-4xl font-black leading-tight tracking-[-0.033em] text-slate-900 dark:text-white">Gestion des Ressources : Module React.js</h1>
+<button class="flex items-center justify-center gap-2 min-w-[84px] cursor-pointer rounded-lg h-11 px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="truncate">Ajouter une ressource</span>
+</button>
+</div>
+<!-- Main Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Main PPT -->
+<div class="lg:col-span-1">
+<!-- SectionHeader -->
+<h2 class="text-2xl font-bold leading-tight tracking-[-0.015em] pb-4 text-slate-800 dark:text-slate-100">Présentation Principale (PPT)</h2>
+<div class="bg-white dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800">
+<!-- EmptyState for PPT -->
+<div class="flex flex-col items-center gap-6 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 px-6 py-14">
+<div class="flex max-w-[480px] flex-col items-center gap-2">
+<p class="text-lg font-bold leading-tight tracking-[-0.015em] text-center text-slate-800 dark:text-slate-200">Glisser-déposer le PPT principal ici</p>
+<p class="text-sm font-normal leading-normal text-center text-slate-500 dark:text-slate-400">Ou cliquez sur le bouton pour choisir un fichier depuis votre ordinateur.</p>
+</div>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+<span class="truncate">Choisir un fichier PPT</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Column: Resource List -->
+<div class="lg:col-span-2">
+<!-- SectionHeader -->
+<h2 class="text-2xl font-bold leading-tight tracking-[-0.015em] pb-4 text-slate-800 dark:text-slate-100">Ressources du Module</h2>
+<div class="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800">
+<div class="overflow-x-auto">
+<table class="w-full text-sm text-left">
+<thead class="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/50">
+<tr>
+<th class="px-6 py-3" scope="col">Nom</th>
+<th class="px-6 py-3" scope="col">Type</th>
+<th class="px-6 py-3" scope="col">Rôle</th>
+<th class="px-6 py-3 text-right" scope="col">Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<th class="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap flex items-center gap-3" scope="row">
+<span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
+<span>Guide d'Installation Node.js</span>
+</th>
+<td class="px-6 py-4">PDF</td>
+<td class="px-6 py-4">
+<span class="bg-primary/20 text-primary-800 dark:text-primary-300 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Annexe</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end items-center gap-2">
+<button class="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500 transition-colors"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<th class="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap flex items-center gap-3" scope="row">
+<span class="material-symbols-outlined text-blue-500">link</span>
+<span>Documentation Officielle React</span>
+</th>
+<td class="px-6 py-4">Lien</td>
+<td class="px-6 py-4">
+<span class="bg-primary/20 text-primary-800 dark:text-primary-300 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Annexe</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end items-center gap-2">
+<button class="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500 transition-colors"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<th class="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap flex items-center gap-3" scope="row">
+<span class="material-symbols-outlined text-green-500">slideshow</span>
+<span>TP - Créer un composant</span>
+</th>
+<td class="px-6 py-4">Vidéo</td>
+<td class="px-6 py-4">
+<span class="bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Principal</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end items-center gap-2">
+<button class="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500 transition-colors"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<th class="px-6 py-4 font-medium text-slate-900 dark:text-white whitespace-nowrap flex items-center gap-3" scope="row">
+<span class="material-symbols-outlined text-orange-500">description</span>
+<span>Exercices sur les Hooks</span>
+</th>
+<td class="px-6 py-4">Document</td>
+<td class="px-6 py-4">
+<span class="bg-primary/20 text-primary-800 dark:text-primary-300 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Annexe</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end items-center gap-2">
+<button class="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500 transition-colors"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

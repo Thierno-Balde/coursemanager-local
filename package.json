@@ -5,6 +5,13 @@
   "type": "module",
   "main": "dist-electron/main.js",
   "build": {
+    "productName": "Isaac.Mpah CourseManager",
+    "appId": "com.thierno.isaacmpah.coursemanager",
+    "copyright": "© 2025 Thierno",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
     "extraResources": [
       {
         "from": "data",

@@ -1,204 +1,243 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Course, CourseItem, Resource, ResourceCategory, ResourceKind, AppData } from '../types';
-import { COURSE_DATA } from '../data';
-import { migrateData } from '../utils/migrate';
-import { getResourcesDir } from '../utils/paths';
-
-type NewResourceInput = {
-  label: string;
-  category: ResourceCategory;
-  kind: ResourceKind;
-  format?: string;
-  path?: string;
-  relativePath?: string;
-  url?: string;
-  provider?: string;
-};
+import { Formation, Module, Ressource, Settings, AppData } from '../types';
 
 interface StoreContextType {
-  courses: Course[];
-  addCourse: (course: Course) => void;
-  addModule: (courseId: string, module: CourseItem) => void;
-  addResource: (courseId: string, moduleId: string, resource: NewResourceInput) => void;
-  deleteResource: (courseId: string, moduleId: string, resourceId: string, relativePath?: string) => void;
-  deleteModule: (courseId: string, moduleId: string) => void;
-  deleteCourse: (courseId: string) => void;
+  formations: Formation[];
+  settings: Settings;
+  addFormation: (formation: Formation) => void;
+  updateFormation: (id: string, formation: Partial<Formation>) => void;
+  deleteFormation: (id: string) => void;
+  addModule: (formationId: string, module: Module) => void;
+  updateModule: (formationId: string, moduleId: string, module: Partial<Module>) => void;
+  deleteModule: (formationId: string, moduleId: string) => void;
+  addRessource: (formationId: string, moduleId: string, ressource: Ressource) => void;
+  updateRessource: (formationId: string, moduleId: string, ressourceId: string, ressource: Partial<Ressource>) => void;
+  deleteRessource: (formationId: string, moduleId: string, ressourceId: string) => void;
+  updateSettings: (settings: Partial<Settings>) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const generateId = (prefix: string) => `${prefix}-${crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)}`;
+const defaultSettings: Settings = {
+  rootDirectory: '',
+};
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const loadFallbackData = (): Course[] => {
-    return migrateData(COURSE_DATA).courses;
-  };
-
-  // Start with seed data; hydrate from Electron after mount
-  const [courses, setCourses] = useState<Course[]>(() => loadFallbackData());
+  const [formations, setFormations] = useState<Formation[]>([]);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
 
   useEffect(() => {
-    let cancelled = false;
-    const hydrate = async () => {
-      if (typeof window !== 'undefined' && window.electronAPI?.getData) {
+    const loadData = async () => {
+      if (window.electronAPI) {
         try {
-          const raw = await window.electronAPI.getData();
-          const migrated = migrateData(raw);
-          if (!cancelled) {
-            setCourses(migrated.courses.length ? migrated.courses : loadFallbackData());
+          const [data, rootDir] = await Promise.all([
+            window.electronAPI.getData(),
+            window.electronAPI.getRoot()
+          ]);
+
+          if (data) {
+            setFormations(data.formations || []);
+            setSettings({
+              ...(data.settings || defaultSettings),
+              rootDirectory: rootDir || ''
+            });
           }
-          return;
         } catch (error) {
-          console.error('Failed to load data from Electron store, falling back:', error);
+          console.error("Failed to load data:", error);
         }
       }
-      if (!cancelled) {
-        setCourses(loadFallbackData());
-      }
     };
-    hydrate();
-    return () => {
-      cancelled = true;
-    };
+    loadData();
   }, []);
 
-  const persistCourses = (updater: (prev: Course[]) => Course[]) => {
-    setCourses(prev => {
-      const next = updater(prev);
-      if (typeof window !== 'undefined' && window.electronAPI?.saveData) {
-        window.electronAPI.saveData({ courses: next }).catch(error => {
-          console.error('Failed to save data to Electron store:', error);
-        });
-      }
-      return next;
-    });
-  };
-
-  const addCourse = (course: Course) => {
-    persistCourses(prev => [...prev, course]);
-  };
-
-  const addModule = (courseId: string, module: CourseItem) => {
-    const normalizedModule: CourseItem = {
-      ...module,
-      resources: (module.resources || []).map(res => ({
-        ...res,
-        id: res.id || generateId('res'),
-        createdAt: res.createdAt || new Date().toISOString(),
-      })),
-    };
-    persistCourses(prev =>
-      prev.map(course => {
-        if (course.id === courseId) {
-          return { ...course, items: [...course.items, normalizedModule] };
-        }
-        return course;
-      })
-    );
-  };
-
-  const addResource = (courseId: string, moduleId: string, resourceInput: NewResourceInput) => {
-    const resourcesDir = getResourcesDir();
-
-    // Fix: relativePath from fileManager includes "resources/", but resourcesDir ALREADY points to that folder.
-    // We need to strip "resources/" from relativePath to avoid duplication (.../resources/resources/file.pdf).
-    let cleanRelative = resourceInput.relativePath || '';
-    if (cleanRelative.startsWith('resources/') || cleanRelative.startsWith('resources\\')) {
-      cleanRelative = cleanRelative.substring(10); // Remove "resources/" (10 chars)
+  const saveData = async (newFormations: Formation[], newSettings: Settings) => {
+    if (window.electronAPI) {
+      await window.electronAPI.saveData({ formations: newFormations, settings: newSettings });
     }
-    // Also remove leading slashes just in case
-    cleanRelative = cleanRelative.replace(/^[/\\\\]+/, '');
-
-    const rebuiltPath = resourceInput.relativePath && resourcesDir
-      ? `${resourcesDir}/${cleanRelative}`
-      : resourceInput.path;
-
-    const resource: Resource = {
-      ...resourceInput,
-      path: rebuiltPath || resourceInput.path,
-      id: generateId('res'),
-      createdAt: new Date().toISOString(),
-    };
-    persistCourses(prev =>
-      prev.map(course => {
-        if (course.id === courseId) {
-          const updatedItems = course.items.map(item => {
-            if (item.id === moduleId) {
-              return { ...item, resources: [...(item.resources || []), resource] };
-            }
-            return item;
-          });
-          return { ...course, items: updatedItems };
-        }
-        return course;
-      })
-    );
   };
 
-  const deleteResource = (courseId: string, moduleId: string, resourceId: string, relativePath?: string) => {
-    if (relativePath && window.electronAPI?.deleteResourceFile) {
-      window.electronAPI.deleteResourceFile(relativePath).catch(error => {
-        console.error('Failed to delete physical resource file:', error);
-      });
+  const updateState = (
+    updater: (prevFormations: Formation[], prevSettings: Settings) => { formations: Formation[], settings: Settings }
+  ) => {
+    const { formations: newFormations, settings: newSettings } = updater(formations, settings);
+    setFormations(newFormations);
+    setSettings(newSettings);
+    saveData(newFormations, newSettings);
+  };
+
+  const addFormation = (formation: Formation) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: [...prevFormations, formation],
+      settings: prevSettings
+    }));
+  };
+
+  const updateFormation = (id: string, updatedFields: Partial<Formation>) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => f.id === id ? { ...f, ...updatedFields } : f),
+      settings: prevSettings
+    }));
+  };
+
+  const deleteFormation = (id: string) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.filter(f => f.id !== id),
+      settings: prevSettings
+    }));
+  };
+
+  const addModule = (formationId: string, module: Module) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => {
+        if (f.id === formationId) {
+          return { ...f, modules: [...f.modules, module] };
+        }
+        return f;
+      }),
+      settings: prevSettings
+    }));
+  };
+
+  const updateModule = (formationId: string, moduleId: string, updatedFields: Partial<Module>) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => {
+        if (f.id === formationId) {
+          return {
+            ...f,
+            modules: f.modules.map(m => m.id === moduleId ? { ...m, ...updatedFields } : m)
+          };
+        }
+        return f;
+      }),
+      settings: prevSettings
+    }));
+  };
+
+  const deleteModule = (formationId: string, moduleId: string) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => {
+        if (f.id === formationId) {
+          return {
+            ...f,
+            modules: f.modules.filter(m => m.id !== moduleId)
+          };
+        }
+        return f;
+      }),
+      settings: prevSettings
+    }));
+  };
+
+  const addRessource = (formationId: string, moduleId: string, ressource: Ressource) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => {
+        if (f.id === formationId) {
+          return {
+            ...f,
+            modules: f.modules.map(m => {
+              if (m.id === moduleId) {
+                return { ...m, ressources: [...m.ressources, ressource] };
+              }
+              return m;
+            })
+          };
+        }
+        return f;
+      }),
+      settings: prevSettings
+    }));
+  };
+
+  const updateRessource = (formationId: string, moduleId: string, ressourceId: string, updatedFields: Partial<Ressource>) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => {
+        if (f.id === formationId) {
+          return {
+            ...f,
+            modules: f.modules.map(m => {
+              if (m.id === moduleId) {
+                return {
+                  ...m,
+                  ressources: m.ressources.map(r => r.id === ressourceId ? { ...r, ...updatedFields } : r)
+                };
+              }
+              return m;
+            })
+          };
+        }
+        return f;
+      }),
+      settings: prevSettings
+    }));
+  };
+
+  const deleteRessource = (formationId: string, moduleId: string, ressourceId: string) => {
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations.map(f => {
+        if (f.id === formationId) {
+          return {
+            ...f,
+            modules: f.modules.map(m => {
+              if (m.id === moduleId) {
+                return {
+                  ...m,
+                  ressources: m.ressources.filter(r => r.id !== ressourceId)
+                };
+              }
+              return m;
+            })
+          };
+        }
+        return f;
+      }),
+      settings: prevSettings
+    }));
+  };
+
+  const updateSettings = async (updatedFields: Partial<Settings>) => {
+    // Handle root directory change separately
+    if (updatedFields.rootDirectory !== undefined && window.electronAPI) {
+      try {
+        const result = await window.electronAPI.setRoot(updatedFields.rootDirectory);
+        if (!result.success) {
+          console.error("Failed to set root directory:", result.error);
+          return; // Don't update state if failed
+        }
+        // Reload data after changing root
+        const data = await window.electronAPI.getData();
+        if (data) {
+          setFormations(data.formations || []);
+          // Keep the new root directory in settings
+          setSettings(prev => ({ ...prev, ...(data.settings || defaultSettings), rootDirectory: updatedFields.rootDirectory! }));
+        }
+        return;
+      } catch (error) {
+        console.error("Error setting root directory:", error);
+        return;
+      }
     }
 
-    persistCourses(prev =>
-      prev.map(course => {
-        if (course.id !== courseId) return course;
-        const updatedItems = course.items.map(item => {
-          if (item.id !== moduleId) return item;
-          return { ...item, resources: (item.resources || []).filter(r => r.id !== resourceId) };
-        });
-        return { ...course, items: updatedItems };
-      })
-    );
-  };
-
-  const deleteModule = (courseId: string, moduleId: string) => {
-    persistCourses(prev =>
-      prev.map(course => {
-        if (course.id !== courseId) return course;
-
-        const moduleToDelete = course.items.find(item => item.id === moduleId);
-        if (moduleToDelete && window.electronAPI?.deleteResourceFile) {
-          moduleToDelete.resources?.forEach(res => {
-            if (res.relativePath) {
-              window.electronAPI!.deleteResourceFile(res.relativePath).catch(err => {
-                console.error('Failed to delete resource during module removal:', err);
-              });
-            }
-          });
-        }
-
-        const updatedItems = course.items.filter(item => item.id !== moduleId);
-        return { ...course, items: updatedItems };
-      })
-    );
-  };
-
-  const deleteCourse = (courseId: string) => {
-    persistCourses(prev => {
-      const courseToDelete = prev.find(c => c.id === courseId);
-
-      // Delete all associated resource files
-      if (courseToDelete && window.electronAPI?.deleteResourceFile) {
-        courseToDelete.items.forEach(item => {
-          item.resources?.forEach(res => {
-            if (res.relativePath) {
-              window.electronAPI!.deleteResourceFile(res.relativePath).catch(err => {
-                console.error('Failed to delete resource during course removal:', err);
-              });
-            }
-          });
-        });
-      }
-
-      return prev.filter(course => course.id !== courseId);
-    });
+    updateState((prevFormations, prevSettings) => ({
+      formations: prevFormations,
+      settings: { ...prevSettings, ...updatedFields }
+    }));
   };
 
   return (
-    <StoreContext.Provider value={{ courses, addCourse, addModule, addResource, deleteResource, deleteModule, deleteCourse }}>
+    <StoreContext.Provider value={{
+      formations,
+      settings,
+      addFormation,
+      updateFormation,
+      deleteFormation,
+      addModule,
+      updateModule,
+      deleteModule,
+      addRessource,
+      updateRessource,
+      deleteRessource,
+      updateSettings
+    }}>
       {children}
     </StoreContext.Provider>
   );

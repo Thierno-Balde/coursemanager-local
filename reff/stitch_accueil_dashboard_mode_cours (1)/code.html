@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Formation (Liste des modules) - Mode Cours</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#137fec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101922",
+          },
+          fontFamily: {
+            "display": ["Lexend", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-[#212529] dark:text-slate-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="flex h-full grow flex-col">
+<div class="flex flex-1 justify-center py-5 sm:px-6 lg:px-8">
+<div class="flex w-full max-w-4xl flex-col">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-700 px-6 py-4">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em] text-[#0d141b] dark:text-slate-50">Formation App</h2>
+</div>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined !text-xl">arrow_back</span>
+<span class="truncate">Retour aux formations</span>
+</button>
+</header>
+<main class="flex flex-col gap-8 p-6">
+<!-- PageHeading -->
+<div class="flex flex-wrap justify-between gap-3">
+<h1 class="text-4xl font-black leading-tight tracking-[-0.033em] text-[#0d141b] dark:text-slate-50 min-w-72">Formation: Cybersécurité Avancée</h1>
+</div>
+<!-- Module List Container -->
+<div class="flex flex-col divide-y divide-slate-200 dark:divide-slate-700 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+<!-- Module ListItem 1 -->
+<a class="flex cursor-pointer items-center gap-4 bg-white dark:bg-background-dark/50 px-6 min-h-[72px] py-4 justify-between transition-colors hover:bg-background-light dark:hover:bg-background-dark" href="#">
+<div class="flex items-center gap-4">
+<div class="flex items-center justify-center rounded-lg bg-primary/20 shrink-0 size-12 text-primary">
+<span class="material-symbols-outlined">shield</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal line-clamp-1 text-[#0d141b] dark:text-slate-50">Module 1: Introduction à la Cybersécurité</p>
+<p class="text-sm font-normal leading-normal line-clamp-2 text-slate-500 dark:text-slate-400">Principes fondamentaux et menaces courantes.</p>
+</div>
+</div>
+<div class="shrink-0 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</a>
+<!-- Module ListItem 2 -->
+<a class="flex cursor-pointer items-center gap-4 bg-white dark:bg-background-dark/50 px-6 min-h-[72px] py-4 justify-between transition-colors hover:bg-background-light dark:hover:bg-background-dark" href="#">
+<div class="flex items-center gap-4">
+<div class="flex items-center justify-center rounded-lg bg-primary/20 shrink-0 size-12 text-primary">
+<span class="material-symbols-outlined">router</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal flex-1 truncate text-[#0d141b] dark:text-slate-50">Module 2: Sécurité des Réseaux</p>
+</div>
+</div>
+<div class="shrink-0 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</a>
+<!-- Module ListItem 3 -->
+<a class="flex cursor-pointer items-center gap-4 bg-white dark:bg-background-dark/50 px-6 min-h-[72px] py-4 justify-between transition-colors hover:bg-background-light dark:hover:bg-background-dark" href="#">
+<div class="flex items-center gap-4">
+<div class="flex items-center justify-center rounded-lg bg-primary/20 shrink-0 size-12 text-primary">
+<span class="material-symbols-outlined">key</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal line-clamp-1 text-[#0d141b] dark:text-slate-50">Module 3: Cryptographie et Authentification</p>
+<p class="text-sm font-normal leading-normal line-clamp-2 text-slate-500 dark:text-slate-400">Protéger les données et vérifier les identités.</p>
+</div>
+</div>
+<div class="shrink-0 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</a>
+<!-- Module ListItem 4 -->
+<a class="flex cursor-pointer items-center gap-4 bg-white dark:bg-background-dark/50 px-6 min-h-[72px] py-4 justify-between transition-colors hover:bg-background-light dark:hover:bg-background-dark" href="#">
+<div class="flex items-center gap-4">
+<div class="flex items-center justify-center rounded-lg bg-primary/20 shrink-0 size-12 text-primary">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal line-clamp-1 text-[#0d141b] dark:text-slate-50">Module 4: Gestion des Risques et Conformité</p>
+<p class="text-sm font-normal leading-normal line-clamp-2 text-slate-500 dark:text-slate-400">Évaluation des vulnérabilités et cadres réglementaires.</p>
+</div>
+</div>
+<div class="shrink-0 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</a>
+<!-- Empty State Example (commented out) -->
+<!--
+              <div class="flex flex-col items-center justify-center gap-4 bg-white dark:bg-background-dark/50 p-10 text-center">
+                <div class="flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 size-16 text-slate-500 dark:text-slate-400">
+                  <span class="material-symbols-outlined !text-4xl">folder_off</span>
+                </div>
+                <div class="flex flex-col">
+                  <p class="font-bold text-[#0d141b] dark:text-slate-50">Aucun module trouvé</p>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Aucun module n'a été ajouté à cette formation.</p>
+                </div>
+              </div>
+              -->
+</div>
+</main>
+</div>
+</div>
+</div>
+</div>
+</body></html>

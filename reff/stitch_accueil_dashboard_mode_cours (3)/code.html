@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestion des Formations - Mode Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+            },
+            fontFamily: {
+              "display": ["Lexend", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 md:px-10 py-3 bg-white dark:bg-background-dark sticky top-0 z-10">
+<div class="flex items-center gap-4 text-slate-900 dark:text-slate-50">
+<div class="text-primary">
+<svg class="w-6 h-6" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" fill="currentColor"></path></svg>
+</div>
+<h2 class="text-lg font-bold tracking-tight">Gestion des Formations - Mode Admin</h2>
+</div>
+<button class="flex items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-xl">person</span>
+</button>
+</header>
+<main class="flex-1 px-4 sm:px-6 md:px-10 py-8">
+<div class="mx-auto flex max-w-4xl flex-col gap-8">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h1 class="text-3xl font-black tracking-tighter text-slate-900 dark:text-slate-50">Formations</h1>
+<p class="text-slate-500 dark:text-slate-400">Centralisez, organisez et ouvrez toutes les ressources pédagogiques.</p>
+</div>
+<button class="flex items-center justify-center gap-2 rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+<span class="truncate">Créer une nouvelle formation</span>
+</button>
+</div>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 sm:p-6">
+<div class="flex flex-col md:flex-row items-start justify-between gap-6">
+<div class="flex flex-1 flex-col gap-4">
+<div class="flex flex-col gap-1">
+<p class="text-lg font-bold text-slate-900 dark:text-slate-50">Introduction à la Cybersécurité</p>
+<p class="text-sm text-slate-500 dark:text-slate-400">Une introduction complète aux principes fondamentaux de la sécurité informatique, couvrant les menaces courantes et les meilleures pratiques.</p>
+</div>
+<button class="flex w-fit items-center justify-center rounded-lg h-9 px-4 bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+<span class="truncate">Voir modules</span>
+</button>
+</div>
+<div class="w-full md:w-auto flex items-center justify-start md:justify-end gap-2">
+<button class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-lg px-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+<span class="truncate">Modifier</span>
+</button>
+<button class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-lg px-3 bg-transparent text-red-500 text-sm font-medium hover:bg-red-500/10 transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+<span class="truncate">Supprimer</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 sm:p-6">
+<div class="flex flex-col md:flex-row items-start justify-between gap-6">
+<div class="flex flex-1 flex-col gap-4">
+<div class="flex flex-col gap-1">
+<p class="text-lg font-bold text-slate-900 dark:text-slate-50">Principes de la Programmation Orientée Objet</p>
+<p class="text-sm text-slate-500 dark:text-slate-400">Apprenez les concepts clés de la POO, y compris l'encapsulation, l'héritage et le polymorphisme, avec des exemples pratiques.</p>
+</div>
+<button class="flex w-fit items-center justify-center rounded-lg h-9 px-4 bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+<span class="truncate">Voir modules</span>
+</button>
+</div>
+<div class="w-full md:w-auto flex items-center justify-start md:justify-end gap-2">
+<button class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-lg px-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+<span class="truncate">Modifier</span>
+</button>
+<button class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-lg px-3 bg-transparent text-red-500 text-sm font-medium hover:bg-red-500/10 transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+<span class="truncate">Supprimer</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 sm:p-6">
+<div class="flex flex-col md:flex-row items-start justify-between gap-6">
+<div class="flex flex-1 flex-col gap-4">
+<div class="flex flex-col gap-1">
+<p class="text-lg font-bold text-slate-900 dark:text-slate-50">Développement Web Avancé avec React</p>
+<p class="text-sm text-slate-500 dark:text-slate-400">Plongez dans les concepts avancés de React, y compris les Hooks, le Context API et la gestion d'état avec Redux pour construire des applications complexes.</p>
+</div>
+<button class="flex w-fit items-center justify-center rounded-lg h-9 px-4 bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+<span class="truncate">Voir modules</span>
+</button>
+</div>
+<div class="w-full md:w-auto flex items-center justify-start md:justify-end gap-2">
+<button class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-lg px-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+<span class="truncate">Modifier</span>
+</button>
+<button class="flex h-9 min-w-[84px] items-center justify-center gap-2 rounded-lg px-3 bg-transparent text-red-500 text-sm font-medium hover:bg-red-500/10 transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+<span class="truncate">Supprimer</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State Example -->
+<div class="flex flex-col items-center justify-center gap-6 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-12 text-center mt-8">
+<div class="rounded-full bg-primary/10 p-4 text-primary">
+<span class="material-symbols-outlined text-4xl">school</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">Aucune formation pour le moment</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Commencez par ajouter votre première formation pour la gérer ici.</p>
+</div>
+<button class="flex items-center justify-center gap-2 rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+<span class="truncate">Créer votre première formation</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

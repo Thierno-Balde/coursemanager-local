@@ -1,58 +1,63 @@
-export type ResourceKind = 'file' | 'link' | 'cloud';
-export type ResourceCategory = 'main' | 'pdfs' | 'videos' | 'extras';
-export type ResourceFormat = 'ppt' | 'pdf' | 'video' | 'image' | 'link' | 'zip' | 'other';
+export type RessourceType = 'ppt' | 'pdf' | 'video' | 'lien';
+export type RessourceRole = 'principal' | 'annexe';
+export type RessourceStockage = 'local' | 'cloud';
 
-export interface Resource {
+export interface Ressource {
   id: string;
-  label: string;
-  kind: ResourceKind;
-  category: ResourceCategory;
-  format?: ResourceFormat | string;
-  path?: string; // absolute path for local files
-  relativePath?: string; // relative to userData/resources for cleanup
-  url?: string; // web URL or custom provider URL
-  provider?: string;
-  createdAt: string;
+  titre: string;
+  type: RessourceType;
+  role: RessourceRole;
+  stockage: RessourceStockage;
+  chemin?: string; // Chemin relatif si local
+  url?: string; // URL si cloud/web
+  notes?: string;
 }
 
-export interface CourseItem {
+export interface Module {
   id: string;
-  title: string;
+  titre: string;
   description?: string;
-  resources: Resource[];
+  ressources: Ressource[];
 }
 
-export interface Course {
+export interface Formation {
   id: string;
-  name: string;
-  description: string;
-  icon?: string; // Icon name for the UI
-  items: CourseItem[];
+  titre: string;
+  description?: string;
+  modules: Module[];
+}
+
+export interface Settings {
+  rootDirectory: string; // Dossier racine absolu sur la machine
 }
 
 export interface AppData {
-  courses: Course[];
+  formations: Formation[];
+  settings: Settings;
+}
+
+// Type pour la réponse de l'API Electron
+export interface ElectronAPIResponse {
+  success: boolean;
+  error?: string;
+  data?: any;
 }
 
 declare global {
   interface Window {
-    electronAPI?: {
+    electronAPI: {
       getData: () => Promise<AppData>;
-      saveData: (data: AppData) => Promise<{ success?: boolean; error?: string } | void>;
-      selectFile: () => Promise<{ path: string; name: string } | null>; // legacy
-      getResourcesDir: () => string | null;
-      importResourceFile: () => Promise<{
-        id: string;
-        name: string;
-        format?: string;
-        absolutePath?: string;
-        relativePath?: string;
-        error?: string;
-      } | null>;
-      deleteResourceFile: (relativePath: string) => Promise<{ success: boolean; error?: string } | void>;
-      openPath: (path: string) => Promise<string>;
+      saveData: (data: AppData) => Promise<ElectronAPIResponse>;
+      selectDirectory: () => Promise<string | null>; // Pour choisir le dossier racine
+      openPath: (path: string) => Promise<string>; // Ouvre un fichier ou une URL
+      // Settings
+      setRoot: (path: string) => Promise<{ success: boolean; error?: string }>;
+      getRoot: () => Promise<string>;
+      // Resources
+      importFile: () => Promise<{ id: string; name: string; format: string; absolutePath: string; relativePath: string; error?: string } | null>;
+      deleteResource: (relativePath: string) => Promise<{ success: boolean; error?: string }>;
+      // Legacy / Utilitaires
+      getAppVersion: () => Promise<string>;
     };
-    // Legacy alias kept for backward compatibility with preload
-    api?: Window['electronAPI'];
   }
 }

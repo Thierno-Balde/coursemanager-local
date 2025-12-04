@@ -1,22 +1,46 @@
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import CoursePage from './pages/CoursePage';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
-import Footer from './components/Footer';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import FormationPage from './pages/FormationPage';
+import ModulePage from './pages/ModulePage';
+import AdminLayout from './components/admin/AdminLayout';
+import ManageCoursesPage from './pages/admin/ManageCoursesPage';
+import CourseFormPage from './pages/admin/CourseFormPage';
+import ManageModulesPage from './pages/admin/ManageModulesPage';
+import ManageResourcesPage from './pages/admin/ManageResourcesPage';
+import SettingsPage from './pages/admin/SettingsPage';
 
-// Using HashRouter because this is intended to run as a local file-based app
-// or on static hosts without server-side rewrite rules.
 const App: React.FC = () => {
   return (
     <StoreProvider>
       <HashRouter>
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+        <div className="min-h-screen font-display bg-background-light dark:bg-background-dark text-[#212529] dark:text-slate-200">
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/course/:courseId" element={<CoursePage />} />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+
+              {/* Mode Cours */}
+              <Route path="formation/:id" element={<FormationPage />} />
+              <Route path="formation/:id/module/:moduleId" element={<ModulePage />} />
+            </Route>
+
+            {/* Mode Admin */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<ManageCoursesPage />} />
+              <Route path="formation/new" element={<CourseFormPage />} />
+              <Route path="formation/edit/:id" element={<CourseFormPage />} />
+              <Route path="course/:courseId/modules" element={<ManageModulesPage />} />
+              <Route path="course/:courseId/module/:moduleId/resources" element={<ManageResourcesPage />} />
+
+              {/* Settings */}
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          <Footer />
         </div>
       </HashRouter>
     </StoreProvider>

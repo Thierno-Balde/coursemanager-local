@@ -8,9 +8,19 @@ const api = {
 
     // File/shell handlers
     selectFile: () => ipcRenderer.invoke('dialog:openFile'),
+    selectDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),
-    importResourceFile: () => ipcRenderer.invoke('resources:importFile'),
-    deleteResourceFile: (relativePath: string) => ipcRenderer.invoke('resources:deleteFile', relativePath),
+
+    // Resources
+    importFile: () => ipcRenderer.invoke('resources:importFile'),
+    deleteResource: (relativePath: string) => ipcRenderer.invoke('resources:deleteFile', relativePath),
+
+    // Settings
+    setRoot: (path: string) => ipcRenderer.invoke('settings:setRoot', path),
+    getRoot: () => ipcRenderer.invoke('settings:getRoot'),
+
+    // Utils
+    getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
 };
 
 // Expose under the expected name for the renderer
