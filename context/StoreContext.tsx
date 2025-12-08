@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Formation, Module, Ressource, Settings, AppData } from '../types';
+import { Formation, Module, Ressource, Settings, AppData, Group, ProgressStatus } from '../types';
 
 interface StoreContextType {
   formations: Formation[];
+  groups: Group[];
   settings: Settings;
   addFormation: (formation: Formation) => void;
   updateFormation: (id: string, formation: Partial<Formation>) => void;
@@ -18,6 +19,8 @@ interface StoreContextType {
   importData: (data: string) => void; // New method for importing data
   reorderModules: (formationId: string, startIndex: number, endIndex: number) => void;
   reorderResources: (formationId: string, moduleId: string, startIndex: number, endIndex: number) => void;
+  addGroup: (group: Group) => void;
+  updateGroupProgress: (groupId: string, moduleId: string, status: ProgressStatus) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -28,23 +31,28 @@ const defaultSettings: Settings = {
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [formations, setFormations] = useState<Formation[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-
+  
   useEffect(() => {
     const loadData = async () => {
       if (window.electronAPI) {
         try {
-          const [data, rootDir] = await Promise.all([
-            window.electronAPI.getData(),
+          const [formationsData, groupsData, rootDir] = await Promise.all([
+            window.electronAPI.getFormations(),
+            window.electronAPI.getGroups(),
             window.electronAPI.getRoot()
           ]);
 
-          if (data) {
-            setFormations(data.formations || []);
+          if (formationsData) {
+            setFormations(formationsData.formations || []);
             setSettings({
-              ...(data.settings || defaultSettings),
+              ...(formationsData.settings || defaultSettings),
               rootDirectory: rootDir || ''
             });
+          }
+          if (groupsData) {
+            setGroups(groupsData);
           }
         } catch (error) {
           console.error("Failed to load data:", error);
@@ -53,87 +61,70 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
     loadData();
   }, []);
-
-  const saveData = async (newFormations: Formation[], newSettings: Settings) => {
+  
+  const saveFormations = async (newFormations: Formation[], newSettings: Settings) => {
     if (window.electronAPI) {
-      await window.electronAPI.saveData({ formations: newFormations, settings: newSettings });
+      await window.electronAPI.saveFormations({ formations: newFormations, settings: newSettings });
+    }
+  };
+  
+  const saveGroups = async (newGroups: Group[]) => {
+    if (window.electronAPI) {
+      // Assuming a saveGroups function will be created in the electron API
+      // await window.electronAPI.saveGroups(newGroups);
     }
   };
 
-  const updateState = async (
-    updater: (prevFormations: Formation[], prevSettings: Settings) => { formations: Formation[], settings: Settings }
+  const updateFormationsState = async (
+    updater: (prevFormations: Formation[]) => Formation[]
   ) => {
-    const { formations: newFormations, settings: newSettings } = updater(formations, settings);
+    const newFormations = updater(formations);
     setFormations(newFormations);
-    setSettings(newSettings);
-    await saveData(newFormations, newSettings); // Await the async saveData call
+    await saveFormations(newFormations, settings);
   };
 
   const addFormation = (formation: Formation) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: [...prevFormations, formation],
-      settings: prevSettings
-    }));
+    updateFormationsState((prevFormations) => [...prevFormations, formation]);
   };
-
+  
   const updateFormation = (id: string, updatedFields: Partial<Formation>) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => f.id === id ? { ...f, ...updatedFields } : f),
-      settings: prevSettings
-    }));
+    updateFormationsState((prevFormations) => 
+      prevFormations.map(f => f.id === id ? { ...f, ...updatedFields } : f)
+    );
   };
 
   const deleteFormation = (id: string) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.filter(f => f.id !== id),
-      settings: prevSettings
-    }));
+    updateFormationsState((prevFormations) => prevFormations.filter(f => f.id !== id));
   };
 
   const addModule = (formationId: string, module: Module) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => {
-        if (f.id === formationId) {
-          return { ...f, modules: [...f.modules, module] };
-        }
-        return f;
-      }),
-      settings: prevSettings
-    }));
+    updateFormationsState((prevFormations) => 
+      prevFormations.map(f => f.id === formationId ? { ...f, modules: [...f.modules, module] } : f)
+    );
   };
-
+  
   const updateModule = (formationId: string, moduleId: string, updatedFields: Partial<Module>) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => {
-        if (f.id === formationId) {
-          return {
-            ...f,
-            modules: f.modules.map(m => m.id === moduleId ? { ...m, ...updatedFields } : m)
-          };
-        }
-        return f;
-      }),
-      settings: prevSettings
-    }));
+    updateFormationsState((prevFormations) => 
+      prevFormations.map(f => 
+        f.id === formationId 
+        ? { ...f, modules: f.modules.map(m => m.id === moduleId ? { ...m, ...updatedFields } : m) }
+        : f
+      )
+    );
   };
 
   const deleteModule = (formationId: string, moduleId: string) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => {
-        if (f.id === formationId) {
-          return {
-            ...f,
-            modules: f.modules.filter(m => m.id !== moduleId)
-          };
-        }
-        return f;
-      }),
-      settings: prevSettings
-    }));
+    updateFormationsState((prevFormations) => 
+      prevFormations.map(f => 
+        f.id === formationId 
+        ? { ...f, modules: f.modules.filter(m => m.id !== moduleId) }
+        : f
+      )
+    );
   };
 
   const reorderModules = (formationId: string, startIndex: number, endIndex: number) => {
-    updateState((prevFormations, prevSettings) => {
+    updateFormationsState((prevFormations) => {
       const newFormations = [...prevFormations];
       const formationIndex = newFormations.findIndex(f => f.id === formationId);
       if (formationIndex !== -1) {
@@ -145,12 +136,64 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           modules: newModules,
         };
       }
-      return { formations: newFormations, settings: prevSettings };
+      return newFormations;
     });
   };
 
+  const addRessource = (formationId: string, moduleId: string, ressource: Ressource) => {
+    updateFormationsState((prevFormations) => 
+      prevFormations.map(f => 
+        f.id === formationId
+        ? { ...f, modules: f.modules.map(m => m.id === moduleId ? { ...m, ressources: [...m.ressources, ressource] } : m) }
+        : f
+      )
+    );
+  };
+
+  const updateRessource = (formationId: string, moduleId: string, ressourceId: string, updatedFields: Partial<Ressource>) => {
+    updateFormationsState((prevFormations) =>
+      prevFormations.map(f =>
+        f.id === formationId
+          ? {
+              ...f,
+              modules: f.modules.map(m =>
+                m.id === moduleId
+                  ? {
+                      ...m,
+                      ressources: m.ressources.map(r =>
+                        r.id === ressourceId ? { ...r, ...updatedFields } : r
+                      ),
+                    }
+                  : m
+              ),
+            }
+          : f
+      )
+    );
+  };
+
+  const deleteRessource = (formationId: string, moduleId: string, ressourceId: string) => {
+    updateFormationsState((prevFormations) =>
+      prevFormations.map(f =>
+        f.id === formationId
+          ? {
+              ...f,
+              modules: f.modules.map(m =>
+                m.id === moduleId
+                  ? {
+                      ...m,
+                      ressources: m.ressources.filter(r => r.id !== ressourceId),
+                    }
+                  : m
+              ),
+            }
+          : f
+      )
+    );
+  };
+
   const reorderResources = (formationId: string, moduleId: string, startIndex: number, endIndex: number) => {
-    updateState((prevFormations, prevSettings) => {
+    updateFormationsState((prevFormations) => {
       const newFormations = [...prevFormations];
       const formationIndex = newFormations.findIndex(f => f.id === formationId);
       if (formationIndex !== -1) {
@@ -171,74 +214,30 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           };
         }
       }
-      return { formations: newFormations, settings: prevSettings };
+      return newFormations;
     });
   };
 
-  const addRessource = (formationId: string, moduleId: string, ressource: Ressource) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => {
-        if (f.id === formationId) {
-          return {
-            ...f,
-            modules: f.modules.map(m => {
-              if (m.id === moduleId) {
-                return { ...m, ressources: [...m.ressources, ressource] };
-              }
-              return m;
-            })
-          };
-        }
-        return f;
-      }),
-      settings: prevSettings
-    }));
+  const addGroup = (group: Group) => {
+    setGroups(prev => [...prev, group]);
+    saveGroups([...groups, group]);
   };
 
-  const updateRessource = (formationId: string, moduleId: string, ressourceId: string, updatedFields: Partial<Ressource>) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => {
-        if (f.id === formationId) {
-          return {
-            ...f,
-            modules: f.modules.map(m => {
-              if (m.id === moduleId) {
-                return {
-                  ...m,
-                  ressources: m.ressources.map(r => r.id === ressourceId ? { ...r, ...updatedFields } : r)
-                };
-              }
-              return m;
-            })
-          };
-        }
-        return f;
-      }),
-      settings: prevSettings
-    }));
-  };
-
-  const deleteRessource = (formationId: string, moduleId: string, ressourceId: string) => {
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations.map(f => {
-        if (f.id === formationId) {
-          return {
-            ...f,
-            modules: f.modules.map(m => {
-              if (m.id === moduleId) {
-                return {
-                  ...m,
-                  ressources: m.ressources.filter(r => r.id !== ressourceId)
-                };
-              }
-              return m;
-            })
-          };
-        }
-        return f;
-      }),
-      settings: prevSettings
-    }));
+  const updateGroupProgress = (groupId: string, moduleId: string, status: ProgressStatus) => {
+    const newGroups = groups.map(g => {
+      if (g.id === groupId) {
+        return {
+          ...g,
+          progress: {
+            ...g.progress,
+            [moduleId]: status,
+          },
+        };
+      }
+      return g;
+    });
+    setGroups(newGroups);
+    saveGroups(newGroups);
   };
 
   const updateSettings = async (updatedFields: Partial<Settings>) => {
@@ -251,7 +250,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return; // Don't update state if failed
         }
         // Reload data after changing root
-        const data = await window.electronAPI.getData();
+        const data = await window.electronAPI.getFormations();
         if (data) {
           setFormations(data.formations || []);
           // Keep the new root directory in settings
@@ -263,16 +262,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return;
       }
     }
-
-    updateState((prevFormations, prevSettings) => ({
-      formations: prevFormations,
-      settings: { ...prevSettings, ...updatedFields }
-    }));
   };
 
   // New: Export data function
   const exportData = () => {
-    return JSON.stringify({ formations, settings }, null, 2);
+    return JSON.stringify({ formations, settings, groups }, null, 2);
   };
 
   // New: Import data function
@@ -281,7 +275,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const imported: AppData = JSON.parse(jsonData);
       setFormations(imported.formations || []);
       setSettings(imported.settings || defaultSettings);
-      saveData(imported.formations || [], imported.settings || defaultSettings);
+      setGroups(imported.groups || []);
+      saveFormations(imported.formations || [], imported.settings || defaultSettings);
+      saveGroups(imported.groups || []);
       return true;
     } catch (error) {
       console.error("Failed to import data:", error);
@@ -289,10 +285,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-
   return (
     <StoreContext.Provider value={{
       formations,
+      groups,
       settings,
       addFormation,
       updateFormation,
@@ -305,6 +301,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       updateRessource,
       deleteRessource,
       reorderResources,
+      addGroup,
+      updateGroupProgress,
       updateSettings,
       exportData, // Add to provider value
       importData, // Add to provider value
@@ -312,12 +310,4 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       {children}
     </StoreContext.Provider>
   );
-};
-
-export const useStore = () => {
-  const context = useContext(StoreContext);
-  if (context === undefined) {
-    throw new Error('useStore must be used within a StoreProvider');
-  }
-  return context;
 };

@@ -10,8 +10,8 @@ const CONFIG_FILENAME = 'config.json';
 type StoragePaths = {
   userDataPath: string;
   dbPath: string;
+  groupsPath: string;
   resourcesDir: string;
-  seedDbPath: string;
   rootDirectory: string;
 };
 
@@ -49,62 +49,44 @@ function getPaths(): StoragePaths {
   const rootDirectory = config.rootDirectory || userDataPath;
 
   const dbPath = path.join(rootDirectory, DB_FILENAME);
+  const groupsPath = path.join(rootDirectory, 'groups.json');
   const resourcesDir = path.join(rootDirectory, RESOURCES_DIRNAME);
   const basePath = app.isPackaged ? process.resourcesPath : app.getAppPath();
-  const seedDbPath = path.join(basePath, 'data', 'db.json');
 
-  return { userDataPath, dbPath, resourcesDir, seedDbPath, rootDirectory };
+  return { userDataPath, dbPath, groupsPath, resourcesDir, rootDirectory };
 }
 
 async function ensureResourcesDir(resourcesDir: string) {
   await fs.mkdir(resourcesDir, { recursive: true });
 }
 
-async function ensureDatabaseSeed(dbPath: string, seedDbPath: string) {
+async function ensureFileExists(filePath: string, defaultContent: string) {
   try {
-    await fs.access(dbPath);
-    return;
+    await fs.access(filePath);
   } catch {
-    // No db yet, fall through to copy
-  }
-
-  // Only copy seed if it exists
-  try {
-    await fs.access(seedDbPath);
-    await fs.copyFile(seedDbPath, dbPath);
-  } catch (e) {
-    console.log('No seed database found, skipping seed.');
-    // Create empty db if no seed
-    await fs.writeFile(dbPath, JSON.stringify({ courses: [] }, null, 2));
+    await fs.writeFile(filePath, defaultContent);
   }
 }
 
 export async function initializeStorage() {
-  const { resourcesDir, dbPath, seedDbPath } = getPaths();
+  const { resourcesDir, dbPath, groupsPath } = getPaths();
 
   await ensureResourcesDir(resourcesDir);
-
-  try {
-    await ensureDatabaseSeed(dbPath, seedDbPath);
-  } catch (error) {
-    console.error(`Failed to seed database from ${seedDbPath}:`, error);
-  }
+  await ensureFileExists(dbPath, JSON.stringify({ formations: [] }, null, 2));
+  await ensureFileExists(groupsPath, JSON.stringify([], null, 2));
 }
 
-export async function readData<T = unknown>(): Promise<T> {
-  const { dbPath } = getPaths();
+export async function readJsonFile<T = unknown>(filePath: string, defaultData: T): Promise<T> {
   try {
-    const data = await fs.readFile(dbPath, 'utf-8');
+    const data = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(data) as T;
   } catch (error) {
-    // If file doesn't exist, return empty structure
-    return { courses: [] } as unknown as T;
+    return defaultData;
   }
 }
 
-export async function writeData(data: unknown) {
-  const { dbPath } = getPaths();
-  await fs.writeFile(dbPath, JSON.stringify(data, null, 2), 'utf-8');
+export async function writeJsonFile(filePath: string, data: unknown) {
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function setRootDirectory(newPath: string) {

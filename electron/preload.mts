@@ -2,8 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 const api = {
     // Data handlers
-    getData: () => ipcRenderer.invoke('data:get'),
-    saveData: (data: any) => ipcRenderer.invoke('data:save', data),
+    getFormations: () => ipcRenderer.invoke('formations:get'),
+    saveFormations: (data: any) => ipcRenderer.invoke('formations:save', data),
+    getGroups: () => ipcRenderer.invoke('groups:get'),
+    createGroup: (group: any) => ipcRenderer.invoke('groups:create', group),
+    saveGroups: (groups: any) => ipcRenderer.invoke('groups:save', groups),
+    updateGroupProgress: (data: any) => ipcRenderer.invoke('groups:update-progress', data),
     getResourcesDir: () => ipcRenderer.sendSync('resources:getDir'),
 
     // File/shell handlers

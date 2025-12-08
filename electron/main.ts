@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initializeStorage, readData, writeData } from './storage.js';
+import { initializeStorage, readJsonFile, writeJsonFile } from './storage.js';
 import { copyResourceFile, deleteResourceFile } from './fileManager.js';
 import { getPaths } from './storage.js';
 
@@ -37,23 +37,66 @@ app.whenReady().then(async () => {
     await initializeStorage();
     createWindow();
 
-    // --- IPC Handlers for Data ---
-    ipcMain.handle('data:get', async () => {
+    // --- IPC Handlers for Formations Data ---
+    ipcMain.handle('formations:get', async () => {
+        const { dbPath } = getPaths();
+        return await readJsonFile(dbPath, { formations: [] });
+    });
+
+    ipcMain.handle('formations:save', async (_event, dataToSave) => {
         try {
-            return await readData();
+            const { dbPath } = getPaths();
+            await writeJsonFile(dbPath, dataToSave);
+            return { success: true };
         } catch (error) {
-            console.error('Failed to read data:', error);
-            // If the file doesn't exist or is corrupted, return a default structure
-            return { courses: [] };
+            console.error('Failed to save formations data:', error);
+            return { success: false, error: (error as Error).message };
         }
     });
 
-    ipcMain.handle('data:save', async (_event, dataToSave) => {
+    // --- IPC Handlers for Groups Data ---
+    ipcMain.handle('groups:get', async () => {
+        const { groupsPath } = getPaths();
+        return await readJsonFile(groupsPath, []);
+    });
+
+    ipcMain.handle('groups:create', async (_event, newGroup) => {
         try {
-            await writeData(dataToSave);
+            const { groupsPath } = getPaths();
+            const groups = await readJsonFile(groupsPath, []);
+            groups.push(newGroup);
+            await writeJsonFile(groupsPath, groups);
             return { success: true };
         } catch (error) {
-            console.error('Failed to save data:', error);
+            console.error('Failed to create group:', error);
+            return { success: false, error: (error as Error).message };
+        }
+    });
+
+    ipcMain.handle('groups:save', async (_event, groupsToSave) => {
+        try {
+            const { groupsPath } = getPaths();
+            await writeJsonFile(groupsPath, groupsToSave);
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to save groups data:', error);
+            return { success: false, error: (error as Error).message };
+        }
+    });
+
+    ipcMain.handle('groups:update-progress', async (_event, { groupId, moduleId, status }) => {
+        try {
+            const { groupsPath } = getPaths();
+            const groups = await readJsonFile(groupsPath, []);
+            const groupIndex = groups.findIndex(g => g.id === groupId);
+            if (groupIndex !== -1) {
+                groups[groupIndex].progress[moduleId] = status;
+                await writeJsonFile(groupsPath, groups);
+                return { success: true };
+            }
+            return { success: false, error: 'Group not found' };
+        } catch (error) {
+            console.error('Failed to update group progress:', error);
             return { success: false, error: (error as Error).message };
         }
     });

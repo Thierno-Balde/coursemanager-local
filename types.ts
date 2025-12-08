@@ -31,9 +31,25 @@ export interface Settings {
   rootDirectory: string; // Dossier racine absolu sur la machine
 }
 
+export type ProgressStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
+
+export interface Group {
+  id: string;
+  name: string;
+  city: string;
+  session: string;
+  startDate: string;
+  endDate: string;
+  formationId: string;
+  createdAt: number;
+  archived: boolean;
+  progress: Record<string, ProgressStatus>; // Map <ModuleID, Status>
+}
+
 export interface AppData {
   formations: Formation[];
   settings: Settings;
+  groups: Group[];
 }
 
 // Type pour la réponse de l'API Electron
@@ -46,8 +62,12 @@ export interface ElectronAPIResponse {
 declare global {
   interface Window {
     electronAPI: {
-      getData: () => Promise<AppData>;
-      saveData: (data: AppData) => Promise<ElectronAPIResponse>;
+      getFormations: () => Promise<{ formations: Formation[], settings: Settings }>;
+      saveFormations: (data: { formations: Formation[], settings: Settings }) => Promise<ElectronAPIResponse>;
+      getGroups: () => Promise<Group[]>;
+      createGroup: (group: Group) => Promise<ElectronAPIResponse>;
+      saveGroups: (groups: Group[]) => Promise<ElectronAPIResponse>;
+      updateGroupProgress: (data: { groupId: string, moduleId: string, status: ProgressStatus }) => Promise<ElectronAPIResponse>;
       selectDirectory: () => Promise<string | null>; // Pour choisir le dossier racine
       openPath: (path: string) => Promise<string>; // Ouvre un fichier ou une URL
       // Settings
