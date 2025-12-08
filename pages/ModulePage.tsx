@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
-import { Ressource } from '../types';
+import { useSession } from '../context/SessionContext';
+import { Ressource, ProgressStatus } from '../types';
+import TrackingModal from '../components/TrackingModal';
 import {
   ArrowLeft, Presentation, FileText, Video, Link as LinkIcon,
   ExternalLink, Play, ChevronRight, Folder
@@ -9,12 +11,16 @@ import {
 
 const ModulePage: React.FC = () => {
   const { id, moduleId } = useParams<{ id: string; moduleId: string }>();
-  const { formations } = useStore();
+  const { formations, groups, updateGroupProgress } = useStore();
+  const { currentGroupId } = useSession();
   const navigate = useNavigate();
   const [rootDirectory, setRootDirectory] = useState<string>('');
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [returnPath, setReturnPath] = useState('');
 
   const formation = formations.find(f => f.id === id);
   const module = formation?.modules.find(m => m.id === moduleId);
+  const currentGroup = groups.find(g => g.id === currentGroupId);
 
   useEffect(() => {
     const fetchRoot = async () => {
@@ -62,6 +68,23 @@ const ModulePage: React.FC = () => {
     }
   };
 
+  const handleReturnClick = (path: string) => {
+    setReturnPath(path); // Store path for navigation after modal
+    if (currentGroupId && currentGroup) {
+      setShowTrackingModal(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleConfirmTracking = async (status: ProgressStatus) => {
+    if (currentGroupId && moduleId) {
+      await updateGroupProgress(currentGroupId, moduleId, status);
+    }
+    setShowTrackingModal(false);
+    navigate(returnPath);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
@@ -75,13 +98,13 @@ const ModulePage: React.FC = () => {
             <ChevronRight className="w-4 h-4" />
             <span className="font-medium text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md">{module.titre}</span>
           </div>
-          <Link
-            to={`/formation/${formation.id}`}
+          <button
+            onClick={() => handleReturnClick(`/formation/${formation.id}`)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Retour</span>
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -202,14 +225,24 @@ const ModulePage: React.FC = () => {
 
         {/* Navigation Footer */}
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex justify-center">
-          <Link
-            to={`/formation/${formation.id}`}
+          <button
+            onClick={() => handleReturnClick(`/formation/${formation.id}`)}
             className="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors"
           >
             Retour au sommaire de la formation
-          </Link>
+          </button>
         </div>
       </main>
+
+      {currentGroup && module && (
+        <TrackingModal
+          show={showTrackingModal}
+          onClose={() => setShowTrackingModal(false)}
+          group={currentGroup}
+          moduleTitle={module.titre}
+          onConfirm={handleConfirmTracking}
+        />
+      )}
     </div>
   );
 };

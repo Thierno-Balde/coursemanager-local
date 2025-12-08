@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
+import { SessionProvider } from './context/SessionContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import FormationPage from './pages/FormationPage';
@@ -19,11 +20,12 @@ import SettingsPage from './pages/admin/SettingsPage';
 const App: React.FC = () => {
   return (
     <StoreProvider>
-      <HashRouter>
-        <div className="min-h-screen font-display bg-background-light dark:bg-background-dark text-[#212529] dark:text-slate-200">
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
+      <SessionProvider>
+        <HashRouter>
+          <div className="min-h-screen font-display bg-background-light dark:bg-background-dark text-[#212529] dark:text-slate-200">
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
 
               {/* Mode Cours */}
               <Route path="formation/:id" element={<FormationPage />} />
@@ -54,7 +56,8 @@ const App: React.FC = () => {
           </Routes>
         </div>
       </HashRouter>
-    </StoreProvider>
+    </SessionProvider>
+  </StoreProvider>
   );
 };
 
