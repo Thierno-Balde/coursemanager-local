@@ -4,12 +4,13 @@ import { useStore } from '../../context/StoreContext';
 import { Ressource, RessourceType } from '../../types';
 import {
   FileText, Video, Link as LinkIcon, Plus, Trash2, Edit,
-  ExternalLink, File, ChevronRight, UploadCloud
+  ExternalLink, File, ChevronRight, UploadCloud, GripVertical
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const ManageResourcesPage: React.FC = () => {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
-  const { formations, deleteRessource } = useStore();
+  const { formations, deleteRessource, reorderResources } = useStore();
 
   const formation = formations.find(f => f.id === courseId);
   const module = formation?.modules.find(m => m.id === moduleId);
@@ -40,6 +41,17 @@ const ManageResourcesPage: React.FC = () => {
       }
       deleteRessource(formation.id, module.id, resource.id);
     }
+  };
+
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source } = result;
+    if (!destination) {
+      return;
+    }
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+      return;
+    }
+    reorderResources(formation.id, module.id, source.index, destination.index);
   };
 
   const getIcon = (type: RessourceType) => {
@@ -126,50 +138,72 @@ const ManageResourcesPage: React.FC = () => {
             <LinkIcon className="w-5 h-5 text-blue-500" />
             Ressources Complémentaires
           </h2>
-          <div className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            {otherResources.length > 0 ? (
-              <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                {otherResources.map(resource => (
-                  <div key={resource.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        {getIcon(resource.type)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-900 dark:text-white truncate">{resource.titre}</p>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <span className="uppercase">{resource.type}</span>
-                          <span>•</span>
-                          <span className="capitalize">{resource.stockage}</span>
-                          {resource.url && (
-                            <>
-                              <span>•</span>
-                              <a href={resource.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 flex items-center gap-1">
-                                {resource.url} <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="resources">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
+                >
+                  {otherResources.length > 0 ? (
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                      {otherResources.map((resource, index) => (
+                        <Draggable key={resource.id} draggableId={resource.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`p-4 flex items-center justify-between group transition-shadow ${snapshot.isDragging ? 'shadow-lg bg-slate-50 dark:bg-slate-800' : 'bg-white dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                            >
+                              <div className="flex items-center gap-4 min-w-0">
+                                <button {...provided.dragHandleProps} className="text-slate-400 dark:text-slate-600 cursor-grab active:cursor-grabbing">
+                                  <GripVertical className="w-5 h-5" />
+                                </button>
+                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                                  {getIcon(resource.type)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-slate-900 dark:text-white truncate">{resource.titre}</p>
+                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <span className="uppercase">{resource.type}</span>
+                                    <span>•</span>
+                                    <span className="capitalize">{resource.stockage}</span>
+                                    {resource.url && (
+                                      <>
+                                        <span>•</span>
+                                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 flex items-center gap-1">
+                                          {resource.url} <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                  <Link to={`/admin/course/${courseId}/module/${moduleId}/resource/${resource.id}/edit`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                                      <Edit className="w-4 h-4" />
+                                  </Link>
+                                  <button onClick={() => handleDelete(resource)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                      <Trash2 className="w-4 h-4" />
+                                  </button>
+                              </div>
+                            </div>
                           )}
-                        </div>
-                      </div>
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
                     </div>
-                    <div className="flex items-center gap-1">
-                        <Link to={`/admin/course/${courseId}/module/${moduleId}/resource/${resource.id}/edit`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
-                            <Edit className="w-4 h-4" />
-                        </Link>
-                        <button onClick={() => handleDelete(resource)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                  ) : (
+                    <div className="p-12 text-center">
+                      <p className="text-slate-500 dark:text-slate-400">Aucune ressource complémentaire.</p>
+                      <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Ajoutez des PDF, vidéos ou liens pour enrichir ce module.</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-12 text-center">
-                <p className="text-slate-500 dark:text-slate-400">Aucune ressource complémentaire.</p>
-                <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Ajoutez des PDF, vidéos ou liens pour enrichir ce module.</p>
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
       </div>
     </div>

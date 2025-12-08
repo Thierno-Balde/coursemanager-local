@@ -16,6 +16,8 @@ interface StoreContextType {
   updateSettings: (settings: Partial<Settings>) => Promise<void>;
   exportData: () => string; // New method for exporting data
   importData: (data: string) => void; // New method for importing data
+  reorderModules: (formationId: string, startIndex: number, endIndex: number) => void;
+  reorderResources: (formationId: string, moduleId: string, startIndex: number, endIndex: number) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -128,6 +130,49 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }),
       settings: prevSettings
     }));
+  };
+
+  const reorderModules = (formationId: string, startIndex: number, endIndex: number) => {
+    updateState((prevFormations, prevSettings) => {
+      const newFormations = [...prevFormations];
+      const formationIndex = newFormations.findIndex(f => f.id === formationId);
+      if (formationIndex !== -1) {
+        const newModules = Array.from(newFormations[formationIndex].modules);
+        const [removed] = newModules.splice(startIndex, 1);
+        newModules.splice(endIndex, 0, removed);
+        newFormations[formationIndex] = {
+          ...newFormations[formationIndex],
+          modules: newModules,
+        };
+      }
+      return { formations: newFormations, settings: prevSettings };
+    });
+  };
+
+  const reorderResources = (formationId: string, moduleId: string, startIndex: number, endIndex: number) => {
+    updateState((prevFormations, prevSettings) => {
+      const newFormations = [...prevFormations];
+      const formationIndex = newFormations.findIndex(f => f.id === formationId);
+      if (formationIndex !== -1) {
+        const formation = newFormations[formationIndex];
+        const moduleIndex = formation.modules.findIndex(m => m.id === moduleId);
+        if (moduleIndex !== -1) {
+          const newResources = Array.from(formation.modules[moduleIndex].ressources);
+          const [removed] = newResources.splice(startIndex, 1);
+          newResources.splice(endIndex, 0, removed);
+          const newModules = [...formation.modules];
+          newModules[moduleIndex] = {
+            ...newModules[moduleIndex],
+            ressources: newResources,
+          };
+          newFormations[formationIndex] = {
+            ...formation,
+            modules: newModules,
+          };
+        }
+      }
+      return { formations: newFormations, settings: prevSettings };
+    });
   };
 
   const addRessource = (formationId: string, moduleId: string, ressource: Ressource) => {
@@ -255,9 +300,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       addModule,
       updateModule,
       deleteModule,
+      reorderModules,
       addRessource,
       updateRessource,
       deleteRessource,
+      reorderResources,
       updateSettings,
       exportData, // Add to provider value
       importData, // Add to provider value
