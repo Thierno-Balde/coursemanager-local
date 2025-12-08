@@ -60,13 +60,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const updateState = (
+  const updateState = async (
     updater: (prevFormations: Formation[], prevSettings: Settings) => { formations: Formation[], settings: Settings }
   ) => {
     const { formations: newFormations, settings: newSettings } = updater(formations, settings);
     setFormations(newFormations);
     setSettings(newSettings);
-    saveData(newFormations, newSettings);
+    await saveData(newFormations, newSettings); // Await the async saveData call
   };
 
   const addFormation = (formation: Formation) => {

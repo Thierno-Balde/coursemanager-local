@@ -25,6 +25,7 @@
     },
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "esModuleInterop": true
   }
 }
