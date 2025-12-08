@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { Link } from 'react-router-dom';
+import { Folder, Search } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
     const { formations } = useStore();
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredFormations = formations.filter(f =>
+        f.titre.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <div className="flex flex-col gap-6">
@@ -16,8 +22,8 @@ const Dashboard: React.FC = () => {
                     </div>
                     <h2 className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em]">Accueil - Mode Cours</h2>
                 </div>
-                <Link to="/admin/settings" className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
-                    <span className="material-symbols-outlined">settings</span>
+                <Link to="/admin" className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                    <span className="material-symbols-outlined">admin_panel_settings</span>
                 </Link>
             </header>
 
@@ -25,6 +31,16 @@ const Dashboard: React.FC = () => {
                 <div className="flex flex-col gap-1">
                     <p className="text-slate-900 dark:text-slate-50 text-4xl font-black leading-tight tracking-[-0.033em]">Vos Formations</p>
                     <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Sélectionnez une formation pour commencer.</p>
+                </div>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Rechercher une formation..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    />
                 </div>
             </div>
 
@@ -39,18 +55,22 @@ const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6 p-4">
-                    {formations.map((formation) => (
-                        <Link key={formation.id} to={`/formation/${formation.id}`} className="group flex flex-col gap-3 p-6 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
-                            <p className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-normal">{formation.titre}</p>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal">{formation.description || "Aucune description"}</p>
+                    {filteredFormations.map((formation) => (
+                        <Link key={formation.id} to={`/formation/${formation.id}`} className="group flex flex-col gap-4 p-6 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
+                            <div className="flex-1">
+                                <h3 className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-normal">{formation.titre}</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal mt-2">{formation.description || "Aucune description"}</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                                <Folder className="w-4 h-4" />
+                                <span>{formation.modules.length} {formation.modules.length > 1 ? 'modules' : 'module'}</span>
+                            </div>
                         </Link>
                     ))}
                 </div>
             )}
 
-            
         </div>
     );
 };
 
-export default Dashboard;
