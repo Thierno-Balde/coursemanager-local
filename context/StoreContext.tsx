@@ -21,6 +21,7 @@ interface StoreContextType {
   reorderResources: (formationId: string, moduleId: string, startIndex: number, endIndex: number) => void;
   addGroup: (group: Group) => void;
   updateGroup: (groupId: string, updatedFields: Partial<Group>) => void;
+  deleteGroup: (groupId: string) => Promise<void>;
   updateGroupProgress: (groupId: string, moduleId: string, status: ProgressStatus) => void;
 }
 
@@ -229,6 +230,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     await saveGroups(newGroups);
   };
 
+  const deleteGroup = async (groupId: string) => {
+    const newGroups = groups.filter(g => g.id !== groupId);
+    setGroups(newGroups);
+    await saveGroups(newGroups);
+  };
+
   const updateGroupProgress = async (groupId: string, moduleId: string, status: ProgressStatus) => {
     const newGroups = groups.map(g => {
       if (g.id === groupId) {
@@ -309,6 +316,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       reorderResources,
       addGroup,
       updateGroup,
+      deleteGroup,
       updateGroupProgress,
       updateSettings,
       exportData, // Add to provider value
