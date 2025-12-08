@@ -20,6 +20,7 @@ interface StoreContextType {
   reorderModules: (formationId: string, startIndex: number, endIndex: number) => void;
   reorderResources: (formationId: string, moduleId: string, startIndex: number, endIndex: number) => void;
   addGroup: (group: Group) => void;
+  updateGroup: (groupId: string, updatedFields: Partial<Group>) => void;
   updateGroupProgress: (groupId: string, moduleId: string, status: ProgressStatus) => void;
 }
 
@@ -70,8 +71,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   const saveGroups = async (newGroups: Group[]) => {
     if (window.electronAPI) {
-      // Assuming a saveGroups function will be created in the electron API
-      // await window.electronAPI.saveGroups(newGroups);
+      await window.electronAPI.saveGroups(newGroups);
     }
   };
 
@@ -218,12 +218,18 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
   };
 
-  const addGroup = (group: Group) => {
+  const addGroup = async (group: Group) => {
     setGroups(prev => [...prev, group]);
-    saveGroups([...groups, group]);
+    await saveGroups([...groups, group]);
   };
 
-  const updateGroupProgress = (groupId: string, moduleId: string, status: ProgressStatus) => {
+  const updateGroup = async (groupId: string, updatedFields: Partial<Group>) => {
+    const newGroups = groups.map(g => g.id === groupId ? { ...g, ...updatedFields } : g);
+    setGroups(newGroups);
+    await saveGroups(newGroups);
+  };
+
+  const updateGroupProgress = async (groupId: string, moduleId: string, status: ProgressStatus) => {
     const newGroups = groups.map(g => {
       if (g.id === groupId) {
         return {
@@ -237,7 +243,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return g;
     });
     setGroups(newGroups);
-    saveGroups(newGroups);
+    await saveGroups(newGroups);
   };
 
   const updateSettings = async (updatedFields: Partial<Settings>) => {
@@ -302,6 +308,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       deleteRessource,
       reorderResources,
       addGroup,
+      updateGroup,
       updateGroupProgress,
       updateSettings,
       exportData, // Add to provider value
