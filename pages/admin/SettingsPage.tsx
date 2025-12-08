@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { Folder, Save, AlertCircle, Database } from 'lucide-react';
+import { Folder, Save, AlertCircle, Database, Upload, Download } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
-    const { settings, updateSettings } = useStore();
+    const { settings, updateSettings, exportData, importData } = useStore();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSelectDirectory = async () => {
         if (!window.electronAPI) {
@@ -30,6 +31,60 @@ const SettingsPage: React.FC = () => {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleExportData = () => {
+        try {
+            const data = exportData();
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `coursemanager_data_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setSuccessMsg('Données exportées avec succès !');
+            setError(null);
+        } catch (err) {
+            setError('Erreur lors de l\'exportation des données.');
+            setSuccessMsg(null);
+            console.error(err);
+        }
+    };
+
+    const handleImportButtonClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const jsonData = e.target?.result as string;
+                    const success = importData(jsonData);
+                    if (success) {
+                        setSuccessMsg('Données importées avec succès !');
+                        setError(null);
+                    } else {
+                        setError('Format de données invalide ou échec de l\'importation.');
+                        setSuccessMsg(null);
+                    }
+                } catch (err) {
+                    setError('Erreur lors du traitement du fichier.');
+                    setSuccessMsg(null);
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+        // Clear the file input after use to allow re-importing the same file
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -91,13 +146,42 @@ const SettingsPage: React.FC = () => {
                     Options avancées pour la gestion de vos données.
                 </p>
                 <div className="flex gap-4">
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-medium text-sm">
+                    <button
+                        onClick={handleExportData}
+                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-medium text-sm flex items-center gap-2"
+                    >
+                        <Download className="w-4 h-4" />
                         Exporter les données
                     </button>
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-medium text-sm">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImportData}
+                        accept="application/json"
+                        className="hidden"
+                    />
+                    <button
+                        onClick={handleImportButtonClick}
+                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-medium text-sm flex items-center gap-2"
+                    >
+                        <Upload className="w-4 h-4" />
                         Importer les données
                     </button>
                 </div>
+
+                {error && (
+                    <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5" />
+                        {error}
+                    </div>
+                )}
+
+                {successMsg && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg flex items-center gap-2">
+                        <Save className="w-5 h-5" />
+                        {successMsg}
+                    </div>
+                )}
             </div>
         </div>
     );

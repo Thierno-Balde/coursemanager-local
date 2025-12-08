@@ -14,6 +14,8 @@ interface StoreContextType {
   updateRessource: (formationId: string, moduleId: string, ressourceId: string, ressource: Partial<Ressource>) => void;
   deleteRessource: (formationId: string, moduleId: string, ressourceId: string) => void;
   updateSettings: (settings: Partial<Settings>) => Promise<void>;
+  exportData: () => string; // New method for exporting data
+  importData: (data: string) => void; // New method for importing data
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -223,6 +225,26 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }));
   };
 
+  // New: Export data function
+  const exportData = () => {
+    return JSON.stringify({ formations, settings }, null, 2);
+  };
+
+  // New: Import data function
+  const importData = (jsonData: string) => {
+    try {
+      const imported: AppData = JSON.parse(jsonData);
+      setFormations(imported.formations || []);
+      setSettings(imported.settings || defaultSettings);
+      saveData(imported.formations || [], imported.settings || defaultSettings);
+      return true;
+    } catch (error) {
+      console.error("Failed to import data:", error);
+      return false;
+    }
+  };
+
+
   return (
     <StoreContext.Provider value={{
       formations,
@@ -236,7 +258,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       addRessource,
       updateRessource,
       deleteRessource,
-      updateSettings
+      updateSettings,
+      exportData, // Add to provider value
+      importData, // Add to provider value
     }}>
       {children}
     </StoreContext.Provider>

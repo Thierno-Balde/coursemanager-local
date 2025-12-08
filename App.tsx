@@ -9,6 +9,7 @@ import AdminLayout from './components/admin/AdminLayout';
 import ManageCoursesPage from './pages/admin/ManageCoursesPage';
 import CourseFormPage from './pages/admin/CourseFormPage';
 import ManageModulesPage from './pages/admin/ManageModulesPage';
+import ModuleFormPage from './pages/admin/ModuleFormPage';
 import ManageResourcesPage from './pages/admin/ManageResourcesPage';
 import SettingsPage from './pages/admin/SettingsPage';
 
@@ -32,6 +33,8 @@ const App: React.FC = () => {
               <Route path="formation/new" element={<CourseFormPage />} />
               <Route path="formation/edit/:id" element={<CourseFormPage />} />
               <Route path="course/:courseId/modules" element={<ManageModulesPage />} />
+              <Route path="course/:courseId/module/new" element={<ModuleFormPage />} />
+              <Route path="course/:courseId/module/:moduleId/edit" element={<ModuleFormPage />} />
               <Route path="course/:courseId/module/:moduleId/resources" element={<ManageResourcesPage />} />
 
               {/* Settings */}
