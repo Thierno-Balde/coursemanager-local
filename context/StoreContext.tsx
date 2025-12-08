@@ -34,7 +34,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [formations, setFormations] = useState<Formation[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-  
+
   useEffect(() => {
     const loadData = async () => {
       if (window.electronAPI) {
@@ -62,13 +62,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
     loadData();
   }, []);
-  
+
   const saveFormations = async (newFormations: Formation[], newSettings: Settings) => {
     if (window.electronAPI) {
       await window.electronAPI.saveFormations({ formations: newFormations, settings: newSettings });
     }
   };
-  
+
   const saveGroups = async (newGroups: Group[]) => {
     if (window.electronAPI) {
       await window.electronAPI.saveGroups(newGroups);
@@ -86,9 +86,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const addFormation = (formation: Formation) => {
     updateFormationsState((prevFormations) => [...prevFormations, formation]);
   };
-  
+
   const updateFormation = (id: string, updatedFields: Partial<Formation>) => {
-    updateFormationsState((prevFormations) => 
+    updateFormationsState((prevFormations) =>
       prevFormations.map(f => f.id === id ? { ...f, ...updatedFields } : f)
     );
   };
@@ -98,27 +98,27 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addModule = (formationId: string, module: Module) => {
-    updateFormationsState((prevFormations) => 
+    updateFormationsState((prevFormations) =>
       prevFormations.map(f => f.id === formationId ? { ...f, modules: [...f.modules, module] } : f)
     );
   };
-  
+
   const updateModule = (formationId: string, moduleId: string, updatedFields: Partial<Module>) => {
-    updateFormationsState((prevFormations) => 
-      prevFormations.map(f => 
-        f.id === formationId 
-        ? { ...f, modules: f.modules.map(m => m.id === moduleId ? { ...m, ...updatedFields } : m) }
-        : f
+    updateFormationsState((prevFormations) =>
+      prevFormations.map(f =>
+        f.id === formationId
+          ? { ...f, modules: f.modules.map(m => m.id === moduleId ? { ...m, ...updatedFields } : m) }
+          : f
       )
     );
   };
 
   const deleteModule = (formationId: string, moduleId: string) => {
-    updateFormationsState((prevFormations) => 
-      prevFormations.map(f => 
-        f.id === formationId 
-        ? { ...f, modules: f.modules.filter(m => m.id !== moduleId) }
-        : f
+    updateFormationsState((prevFormations) =>
+      prevFormations.map(f =>
+        f.id === formationId
+          ? { ...f, modules: f.modules.filter(m => m.id !== moduleId) }
+          : f
       )
     );
   };
@@ -141,11 +141,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addRessource = (formationId: string, moduleId: string, ressource: Ressource) => {
-    updateFormationsState((prevFormations) => 
-      prevFormations.map(f => 
+    updateFormationsState((prevFormations) =>
+      prevFormations.map(f =>
         f.id === formationId
-        ? { ...f, modules: f.modules.map(m => m.id === moduleId ? { ...m, ressources: [...m.ressources, ressource] } : m) }
-        : f
+          ? { ...f, modules: f.modules.map(m => m.id === moduleId ? { ...m, ressources: [...m.ressources, ressource] } : m) }
+          : f
       )
     );
   };
@@ -155,18 +155,18 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       prevFormations.map(f =>
         f.id === formationId
           ? {
-              ...f,
-              modules: f.modules.map(m =>
-                m.id === moduleId
-                  ? {
-                      ...m,
-                      ressources: m.ressources.map(r =>
-                        r.id === ressourceId ? { ...r, ...updatedFields } : r
-                      ),
-                    }
-                  : m
-              ),
-            }
+            ...f,
+            modules: f.modules.map(m =>
+              m.id === moduleId
+                ? {
+                  ...m,
+                  ressources: m.ressources.map(r =>
+                    r.id === ressourceId ? { ...r, ...updatedFields } : r
+                  ),
+                }
+                : m
+            ),
+          }
           : f
       )
     );
@@ -177,16 +177,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       prevFormations.map(f =>
         f.id === formationId
           ? {
-              ...f,
-              modules: f.modules.map(m =>
-                m.id === moduleId
-                  ? {
-                      ...m,
-                      ressources: m.ressources.filter(r => r.id !== ressourceId),
-                    }
-                  : m
-              ),
-            }
+            ...f,
+            modules: f.modules.map(m =>
+              m.id === moduleId
+                ? {
+                  ...m,
+                  ressources: m.ressources.filter(r => r.id !== ressourceId),
+                }
+                : m
+            ),
+          }
           : f
       )
     );
@@ -317,4 +317,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       {children}
     </StoreContext.Provider>
   );
+};
+
+export const useStore = () => {
+  const context = useContext(StoreContext);
+  if (context === undefined) {
+    throw new Error('useStore must be used within a StoreProvider');
+  }
+  return context;
 };
