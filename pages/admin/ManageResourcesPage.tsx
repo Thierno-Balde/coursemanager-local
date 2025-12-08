@@ -1,24 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
-import { Ressource, RessourceType, RessourceRole } from '../../types';
+import { Ressource, RessourceType } from '../../types';
 import {
-  FileText, Video, Link as LinkIcon, PlusCircle, Trash2,
-  ExternalLink, File, ChevronRight, UploadCloud, AlertCircle
+  FileText, Video, Link as LinkIcon, Plus, Trash2, Edit,
+  ExternalLink, File, ChevronRight, UploadCloud
 } from 'lucide-react';
 
 const ManageResourcesPage: React.FC = () => {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
-  const { formations, addRessource, deleteRessource } = useStore();
+  const { formations, deleteRessource } = useStore();
 
   const formation = formations.find(f => f.id === courseId);
   const module = formation?.modules.find(m => m.id === moduleId);
-
-  const [newType, setNewType] = useState<RessourceType>('pdf');
-  const [newRole, setNewRole] = useState<RessourceRole>('annexe');
-  const [linkTitle, setLinkTitle] = useState('');
-  const [linkUrl, setLinkUrl] = useState('');
-  const [loading, setLoading] = useState(false);
 
   if (!formation || !module) {
     return (
@@ -29,39 +23,8 @@ const ManageResourcesPage: React.FC = () => {
     );
   }
 
-  const pptPrincipal = module.ressources.find(r => r.role === 'principal' && r.type === 'ppt');
+  const pptPrincipal = module.ressources.find(r => r.role === 'principal');
   const otherResources = module.ressources.filter(r => r.id !== pptPrincipal?.id);
-
-  const handleFileSelect = async (role: RessourceRole, type: RessourceType) => {
-    if (window.electronAPI) {
-      setLoading(true);
-      try {
-        const result = await window.electronAPI.importFile();
-        if (result) {
-          if (result.error) {
-            alert(`Erreur lors de l'import: ${result.error}`);
-            return;
-          }
-          const newResource: Ressource = {
-            id: result.id, // Use ID from backend
-            titre: result.name,
-            type: type, // User selected type (e.g. ppt, pdf, video)
-            role: role,
-            stockage: 'local',
-            chemin: result.relativePath,
-          };
-          addRessource(formation.id, module.id, newResource);
-        }
-      } catch (error) {
-        console.error("Import failed:", error);
-        alert("Erreur lors de l'import du fichier.");
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      alert("Fonctionnalité disponible uniquement dans l'application Electron.");
-    }
-  };
 
   const handleDelete = async (resource: Ressource) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?')) {
@@ -70,8 +33,6 @@ const ManageResourcesPage: React.FC = () => {
           const result = await window.electronAPI.deleteResource(resource.chemin);
           if (!result.success) {
             console.error("Failed to delete file:", result.error);
-            // Optionally warn user, but we still remove from DB?
-            // Better to warn but proceed with DB deletion to keep state clean if file is gone
           }
         } catch (error) {
           console.error("Error deleting resource file:", error);
@@ -81,32 +42,11 @@ const ManageResourcesPage: React.FC = () => {
     }
   };
 
-  const handleAddResource = async () => {
-    if (newType === 'lien') {
-      if (!linkUrl.trim()) return;
-      const newResource: Ressource = {
-        id: crypto.randomUUID(),
-        titre: linkTitle.trim() || linkUrl.trim(),
-        type: 'lien',
-        role: newRole,
-        stockage: 'cloud',
-        url: linkUrl.trim(),
-      };
-      addRessource(formation.id, module.id, newResource);
-      setLinkTitle('');
-      setLinkUrl('');
-      return;
-    }
-
-    // pdf / video / ppt additions rely on Electron file picker
-    await handleFileSelect(newRole, newType);
-  };
-
   const getIcon = (type: RessourceType) => {
     switch (type) {
       case 'pdf': return <FileText className="w-5 h-5 text-red-500" />;
       case 'video': return <Video className="w-5 h-5 text-green-500" />;
-      case 'ppt': return <File className="w-5 h-5 text-orange-500" />; // Lucide doesn't have specific PPT icon
+      case 'ppt': return <File className="w-5 h-5 text-orange-500" />;
       case 'lien': return <LinkIcon className="w-5 h-5 text-blue-500" />;
       default: return <File className="w-5 h-5 text-slate-500" />;
     }
@@ -126,88 +66,42 @@ const ManageResourcesPage: React.FC = () => {
       {/* PageHeading */}
       <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Gestion des Ressources</h1>
-
-        <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-900/50 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center gap-2 px-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Ajouter :</span>
-          </div>
-          <select
-            value={newType}
-            onChange={(e) => setNewType(e.target.value as RessourceType)}
-            className="rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500 py-2"
-          >
-            <option value="pdf">PDF</option>
-            <option value="video">Vidéo</option>
-            <option value="ppt">PPT</option>
-            <option value="lien">Lien Web</option>
-          </select>
-
-          <select
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value as RessourceRole)}
-            className="rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500 py-2"
-          >
-            <option value="annexe">Annexe</option>
-            <option value="principal">Principal</option>
-          </select>
-
-          {newType === 'lien' && (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={linkTitle}
-                onChange={(e) => setLinkTitle(e.target.value)}
-                placeholder="Titre"
-                className="rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm px-3 py-2 w-32"
-              />
-              <input
-                type="url"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://..."
-                className="rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm px-3 py-2 w-48"
-              />
-            </div>
-          )}
-
-          <button
-            onClick={handleAddResource}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? <UploadCloud className="w-4 h-4 animate-bounce" /> : <PlusCircle className="w-4 h-4" />}
-            <span className="truncate">Ajouter</span>
-          </button>
-        </div>
+        <Link
+          to={`/admin/course/${courseId}/module/${moduleId}/resource/new`}
+          className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="truncate">Ajouter une ressource</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Main PPT */}
+        {/* Left Column: Main Resource */}
         <div className="lg:col-span-1 space-y-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <File className="w-5 h-5 text-orange-500" />
             Support Principal
           </h2>
-
           <div className="bg-white dark:bg-slate-900/50 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm h-full">
             {pptPrincipal ? (
-              <div className="flex flex-col gap-6 h-full justify-between">
-                <div className="flex flex-col items-center text-center gap-4">
+              <div className="flex flex-col gap-4 h-full">
+                <div className="flex-1 flex flex-col items-center text-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                    <File className="w-8 h-8" />
+                    {getIcon(pptPrincipal.type)}
                   </div>
                   <div>
                     <p className="font-bold text-slate-900 dark:text-white line-clamp-2">{pptPrincipal.titre}</p>
-                    <p className="text-xs text-slate-500 mt-1">Format PPT • Principal</p>
+                    <p className="text-xs text-slate-500 mt-1">Format {pptPrincipal.type.toUpperCase()} • Principal</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(pptPrincipal)}
-                  className="w-full py-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Supprimer
-                </button>
+                <div className="flex justify-center gap-2">
+                    <Link to={`/admin/course/${courseId}/module/${moduleId}/resource/${pptPrincipal.id}/edit`} className="flex-1 py-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                        <Edit className="w-4 h-4" /> Modifier
+                    </Link>
+                    <button onClick={() => handleDelete(pptPrincipal)} className="flex-1 py-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                        <Trash2 className="w-4 h-4" /> Supprimer
+                    </button>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-8">
@@ -216,15 +110,11 @@ const ManageResourcesPage: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium text-slate-900 dark:text-white">Aucun support principal</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Ajoutez un fichier PPT ou PDF comme support de cours principal.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Ajoutez une ressource marquée comme "Principale".</p>
                 </div>
-                <button
-                  onClick={() => handleFileSelect('principal', 'ppt')}
-                  disabled={loading}
-                  className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Sélectionner un fichier
-                </button>
+                <Link to={`/admin/course/${courseId}/module/${moduleId}/resource/new`} className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">
+                  Ajouter un support
+                </Link>
               </div>
             )}
           </div>
@@ -236,7 +126,6 @@ const ManageResourcesPage: React.FC = () => {
             <LinkIcon className="w-5 h-5 text-blue-500" />
             Ressources Complémentaires
           </h2>
-
           <div className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             {otherResources.length > 0 ? (
               <div className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -263,14 +152,14 @@ const ManageResourcesPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-
-                    <button
-                      onClick={() => handleDelete(resource)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <Link to={`/admin/course/${courseId}/module/${moduleId}/resource/${resource.id}/edit`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                            <Edit className="w-4 h-4" />
+                        </Link>
+                        <button onClick={() => handleDelete(resource)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
                   </div>
                 ))}
               </div>

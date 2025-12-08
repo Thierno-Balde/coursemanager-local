@@ -11,6 +11,7 @@ import CourseFormPage from './pages/admin/CourseFormPage';
 import ManageModulesPage from './pages/admin/ManageModulesPage';
 import ModuleFormPage from './pages/admin/ModuleFormPage';
 import ManageResourcesPage from './pages/admin/ManageResourcesPage';
+import ResourceFormPage from './pages/admin/ResourceFormPage';
 import SettingsPage from './pages/admin/SettingsPage';
 
 const App: React.FC = () => {
@@ -36,6 +37,8 @@ const App: React.FC = () => {
               <Route path="course/:courseId/module/new" element={<ModuleFormPage />} />
               <Route path="course/:courseId/module/:moduleId/edit" element={<ModuleFormPage />} />
               <Route path="course/:courseId/module/:moduleId/resources" element={<ManageResourcesPage />} />
+              <Route path="course/:courseId/module/:moduleId/resource/new" element={<ResourceFormPage />} />
+              <Route path="course/:courseId/module/:moduleId/resource/:resourceId/edit" element={<ResourceFormPage />} />
 
               {/* Settings */}
               <Route path="settings" element={<SettingsPage />} />
