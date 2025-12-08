@@ -25,10 +25,17 @@ const AdminLayout: React.FC = () => {
           <nav className="flex flex-col gap-2 mt-4">
             <Link
               to="/admin"
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/admin') && !isActive('/admin/settings') ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/admin') && !isActive('/admin/settings') && !isActive('/admin/groups') ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive('/admin') ? "'FILL' 1" : "'FILL' 0" }}>dashboard</span>
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive('/admin') && !isActive('/admin/settings') && !isActive('/admin/groups') ? "'FILL' 1" : "'FILL' 0" }}>dashboard</span>
               <p className="text-sm font-medium leading-normal">Formations</p>
+            </Link>
+            <Link
+              to="/admin/groups"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isActive('/admin/groups') ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive('/admin/groups') ? "'FILL' 1" : "'FILL' 0" }}>group</span>
+              <p className="text-sm font-medium leading-normal">Groupes</p>
             </Link>
             <Link
               to="/admin/settings"
