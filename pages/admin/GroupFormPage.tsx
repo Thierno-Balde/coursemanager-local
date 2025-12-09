@@ -19,14 +19,19 @@ const GroupFormPage: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [formationId, setFormationId] = useState('');
 
+  // Ref to ensure we don't re-populate form if the user is typing 
+  // and the background store updates (avoid overwriting user input)
+  const hasLoadedData = React.useRef(false);
+
   useEffect(() => {
-    if (isEditing && currentGroup) {
+    if (isEditing && currentGroup && !hasLoadedData.current) {
       setName(currentGroup.name);
       setCity(currentGroup.city);
       setSession(currentGroup.session);
       setStartDate(currentGroup.startDate);
       setEndDate(currentGroup.endDate);
       setFormationId(currentGroup.formationId);
+      hasLoadedData.current = true;
     } else if (isEditing && !currentGroup) {
       // Trying to edit a group that doesn't exist
       navigate('/admin/groups');
@@ -73,7 +78,7 @@ const GroupFormPage: React.FC = () => {
         <ChevronRight className="w-4 h-4" />
         <span className="font-medium text-slate-900 dark:text-slate-100">{isEditing ? 'Modifier' : 'Nouveau'}</span>
       </div>
-      
+
       <div className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">

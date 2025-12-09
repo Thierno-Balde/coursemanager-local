@@ -29,3 +29,5 @@ dist-ssr
 *.jpeg
 *.tiff
 *.bmp
+playwright-report/
+test-results/

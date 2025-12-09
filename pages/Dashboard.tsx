@@ -4,12 +4,21 @@ import { Link } from 'react-router-dom';
 import { Folder, Search } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-    const { formations } = useStore();
+    const { formations, groups } = useStore();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredFormations = formations.filter(f =>
-        f.titre.toLowerCase().includes(searchTerm.toLowerCase())
+    // Get IDs of formations that belong to at least one active group
+    const activeFormationIds = new Set(
+        groups
+            .filter(g => !g.archived)
+            .map(g => g.formationId)
     );
+
+    const filteredFormations = formations
+        .filter(f => activeFormationIds.has(f.id))
+        .filter(f =>
+            f.titre.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
     return (
         <div className="flex flex-col gap-6">
@@ -44,14 +53,18 @@ const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {formations.length === 0 ? (
+            {activeFormationIds.size === 0 ? (
                 <div className="p-4">
                     <div className="flex flex-col items-center gap-6 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 px-6 py-14 bg-white/50 dark:bg-slate-900/20">
                         <div className="flex max-w-[480px] flex-col items-center gap-2">
-                            <p className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] max-w-[480px] text-center">Aucune formation n'a été créée</p>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm font-normal leading-normal max-w-[480px] text-center">Les formations que vous créerez dans le mode admin apparaîtront ici.</p>
+                            <p className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] max-w-[480px] text-center">Aucune formation active</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm font-normal leading-normal max-w-[480px] text-center">Activez un groupe dans l'administration pour voir les formations associées ici.</p>
                         </div>
                     </div>
+                </div>
+            ) : filteredFormations.length === 0 ? (
+                <div className="p-4 text-center text-slate-500">
+                    Aucune formation trouvée pour "{searchTerm}"
                 </div>
             ) : (
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6 p-4">
