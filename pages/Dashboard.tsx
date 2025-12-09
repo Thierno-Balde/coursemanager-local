@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { Link } from 'react-router-dom';
 import { Folder, Search } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Dashboard: React.FC = () => {
     const { formations, groups } = useStore();
@@ -31,9 +32,12 @@ const Dashboard: React.FC = () => {
                     </div>
                     <h2 className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em]">Accueil - Mode Cours</h2>
                 </div>
-                <Link to="/admin" className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
-                    <span className="material-symbols-outlined">admin_panel_settings</span>
-                </Link>
+                <div className="flex items-center gap-3">
+                    <ThemeToggle />
+                    <Link to="/admin" className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                        <span className="material-symbols-outlined">admin_panel_settings</span>
+                    </Link>
+                </div>
             </header>
 
             <div className="flex flex-wrap justify-between items-center gap-4 p-4">

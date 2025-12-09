@@ -29,6 +29,7 @@ export interface Formation {
 
 export interface Settings {
   rootDirectory: string; // Dossier racine absolu sur la machine
+  theme?: 'light' | 'dark'; // Thème de l'application
 }
 
 export type ProgressStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';

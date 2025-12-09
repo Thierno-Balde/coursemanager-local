@@ -1,0 +1,60 @@
+
+# GUIDE UTILISATEUR - APPLICATION GESTION DE FORMATIONS
+======================================================
+Ce document est destiné au formateur pour la prise en main de l'application "Course Manager". 
+Cette application vous permet d'organiser vos supports de cours locaux, de gérer des groupes d'apprenants et de présenter vos contenus de manière structurée.
+
+1. INTRODUCTION
+---------------
+Cette application est une solution "Bureaux" (Desktop) qui fonctionne sans connexion internet obligatoire (sauf pour les liens web externes). Elle scanne un dossier de votre ordinateur (le "Dossier Racine") pour vous aider à organiser vos fichiers (PDFs, Vidéos, PPT, etc.) en formations structurées.
+
+2. PREMIÈRE UTILISATION : CONFIGURATION
+---------------------------------------
+Avant de commencer à créer des cours, vous devez dire à l'application où se trouvent vos fichiers.
+
+1. Allez dans l'onglet **Settings** (Paramètres) via le menu d'administration.
+2. Cliquez sur "Définir le dossier racine" (ou "Set Root Directory").
+3. Sélectionnez le dossier de votre ordinateur qui contient tous vos supports de cours.
+   *Note : L'application utilisera ce dossier comme point de départ. Si vous déplacez ce dossier plus tard, vous devrez refaire cette configuration.*
+
+3. FONCTIONNALITÉS PRINCIPALES
+------------------------------
+L'application se divise en deux modes principaux :
+- **Mode Administration** : Pour créer et modifier le contenu.
+- **Mode Lecture (Dashboard)** : Pour visualiser le contenu (comme le verra l'apprenant ou pour la projection).
+
+A. GESTION DES FORMATIONS (ONGLET START / COURSES)
+--------------------------------------------------
+C'est ici que vous structurez votre pédagogie.
+
+*   **Créer une formation** : Cliquez sur le bouton d'ajout (+). Donnez un titre, une description et une image de couverture.
+*   **Gérer les Modules** : Une fois dans une formation, vous découpez le cours en "Modules" (ex: Chapitre 1, Introduction, TP, etc.).
+*   **Ajouter des Ressources** : Dans chaque module, vous ajoutez vos supports.
+    *   *Type Fichier* : Sélectionnez un fichier présent dans votre "Dossier Racine".
+    *   *Type Lien* : Ajoutez une URL vers un site web (ex: Quiz en ligne, Vidéo YouTube).
+
+B. GESTION DES GROUPES (ONGLET GROUPS)
+--------------------------------------
+Gérez vos promotions ou classes d'apprenants.
+
+*   **Créer un Groupe** : Ajoutez un nouveau groupe (ex: "Promo 2024", "CDA Java").
+*   **Attribution des cours** : Pour chaque groupe, vous pouvez définir quels cours sont visibles ou non.
+    *   *Actif* : Le groupe a accès à ce cours.
+    *   *Inactif* : Le cours est masqué pour ce groupe.
+*   **Suivi** : (Si activé) Vous pouvez voir la progression globale du groupe sur les modules.
+*   **Archivage/Suppression** : Vous pouvez archiver un groupe terminé ou le supprimer définitivement.
+
+C. SAUVEGARDE ET EXPORT (ONGLET SETTINGS)
+-----------------------------------------
+Vôtre travail d'organisation est précieux.
+*   **Exporter les données** : Génère un fichier de sauvegarde de toute votre structure (titres, descriptions, organisation). Sauvegardez ce fichier régulièrement.
+*   **Importer les données** : Permet de restaurer une structure précédente ou de la copier sur un autre ordinateur (à condition d'avoir les mêmes fichiers dans le Dossier Racine).
+
+4. ASTUCES POUR LE FORMATEUR
+----------------------------
+*   **Organisation des fichiers** : Il est conseillé de bien ranger vos fichiers dans votre ordinateur AVANT de les lier dans l'application (ex: un sous-dossier par cours).
+*   **Navigation** : Utilisez le logo de l'application ou le bouton "Home" pour revenir au tableau de bord principal (Mode Lecture).
+*   **Mode Sombre** : Cliquez sur l'icône Lune/Soleil pour basculer entre les modes clair et sombre, confortable pour les projections.
+
+------------------------------------------------------
+Besoin d'aide ? Contactez l'administrateur technique.

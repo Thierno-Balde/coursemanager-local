@@ -29,6 +29,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const defaultSettings: Settings = {
   rootDirectory: '',
+  theme: 'light',
 };
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -63,6 +64,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
     loadData();
   }, []);
+
+  // Apply theme class to document
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(settings.theme || 'light');
+  }, [settings.theme]);
 
   const saveFormations = async (newFormations: Formation[], newSettings: Settings) => {
     if (window.electronAPI) {
@@ -275,6 +283,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return;
       }
     }
+
+    // Handle other settings (theme, etc.)
+    const newSettings = { ...settings, ...updatedFields };
+    setSettings(newSettings);
+    await saveFormations(formations, newSettings);
   };
 
   // New: Export data function
